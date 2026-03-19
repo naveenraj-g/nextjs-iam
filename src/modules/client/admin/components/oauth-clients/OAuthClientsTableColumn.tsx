@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { Copy, Edit, EllipsisVertical, Trash2 } from "lucide-react";
+import { Edit, EllipsisVertical, Trash2 } from "lucide-react";
 import { TanstackTableColumnSorting } from "@/modules/client/shared/components/table/tanstack-table-column-sorting";
 import {
   DropdownMenu,
@@ -101,9 +101,9 @@ export const oauthClientsTableColumn = (): ColumnDef<TOAuthClient>[] => [
     header: "Scopes",
     accessorKey: "scope",
     cell({ row }) {
-      const scopes = row.original.scope?.split(" ") ?? [];
+      const scopes = row.original.scope?.split(" ") || [];
 
-      return (
+      return row.original.scope ? (
         <div className="flex items-center gap-2 flex-wrap w-70">
           {scopes.map((scope, i) => (
             <Badge
@@ -121,6 +121,8 @@ export const oauthClientsTableColumn = (): ColumnDef<TOAuthClient>[] => [
             </Badge>
           ))}
         </div>
+      ) : (
+        "-"
       );
     },
   },

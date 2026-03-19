@@ -28,7 +28,7 @@ function OAuthClientsTable({ oauthClients, error }: IOAuthClientsTableProps) {
         icon={<Layers />}
         title="No OAuth Client Configured"
         description="Configure OAuth Clients."
-        buttonLabel="Add Local Storage"
+        buttonLabel="Add OAuth Client"
         buttonIcon={<Plus />}
         buttonOnClick={() => {
           openModal({

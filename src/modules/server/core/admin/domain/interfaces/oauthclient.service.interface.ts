@@ -1,4 +1,7 @@
-import { TGetOAuthClientsResponseDtoSchema } from "@/modules/entities/schemas/admin/oauthclient/oauthclient.schema";
+import {
+  TCreateOAuthClientResponseDtoSchema,
+  TGetOAuthClientsResponseDtoSchema,
+} from "@/modules/entities/schemas/admin/oauthclient/oauthclient.schema";
 import {
   TCreateOAuthClientPayload,
   TUpdateOAuthClientPayload,
@@ -7,7 +10,9 @@ import {
 } from "@/modules/entities/types/admin/oauthclient.type";
 
 export interface IOAuthClientService {
-  createOAuthClient(payload: TCreateOAuthClientPayload): Promise<void>;
+  createOAuthClient(
+    payload: TCreateOAuthClientPayload,
+  ): Promise<TCreateOAuthClientResponseDtoSchema>;
   updateOAuthClient(payload: TUpdateOAuthClientPayload): Promise<void>;
   deleteOAuthClient(payload: TDeleteOAuthClientPayload): Promise<void>;
   getOAuthClient(payload: TGetOAuthClientPayload): Promise<void>;

@@ -2,7 +2,6 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { requireRole } from "@/modules/server/shared/auth/require-role";
 import { MenuBar } from "@/modules/client/shared/menubar/MenuBar";
 import AppNavbar from "@/modules/client/shared/navbar/AppNavbar";
-import React from "react";
 
 async function AdminLayout({
   children,

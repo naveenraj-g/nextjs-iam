@@ -27,32 +27,23 @@ import { toast } from "sonner";
 import { useServerAction } from "zsa-react";
 import { useSession } from "../auth/auth-client";
 import { NavUserSkeleton } from "./NavUserSkeleton";
+import { signoutAction } from "@/modules/server/presentation/actions/auth";
 
 export function NavUser({ isSidebar = false }: { isSidebar?: boolean }) {
   const { data, isPending, isRefetching } = useSession();
   const router = useRouter();
   const { state } = useSidebar();
 
-  // const { execute } = useServerAction(signOut, {
-  //   onError(ctx) {
-  //     toast("Error!", {
-  //       description: ctx.err.message,
-  //     });
-  //   },
-  // });
+  const { execute } = useServerAction(signoutAction, {
+    onError(ctx) {
+      toast("Error!", {
+        description: ctx.err.message,
+      });
+    },
+  });
 
   async function handleLogout() {
-    // const [data] = await execute();
-    // if (!data) {
-    //   toast.error("Something went wrong!", {
-    //     description: "Failed to logout",
-    //     richColors: true,
-    //   });
-    //   return;
-    // }
-    // if (data.success) {
-    //   router.push("/");
-    // }
+    await execute({});
   }
 
   if (isPending || isRefetching) {

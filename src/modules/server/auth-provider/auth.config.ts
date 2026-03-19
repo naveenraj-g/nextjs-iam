@@ -223,6 +223,10 @@ export const authConfig = {
         page: process.env.SIGNUP_PAGE!,
       },
 
+      silenceWarnings: {
+        oauthAuthServerConfig: true,
+      },
+
       scopes: ['openid', 'profile', 'email', 'offline_access'],
 
       storeClientSecret: 'hashed',

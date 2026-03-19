@@ -79,6 +79,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --progress-bar: #27272a;
 }
 
 .dark {
@@ -114,6 +115,7 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --progress-bar: #e4e4e7;
 }
 
 @layer base {
@@ -123,4 +125,62 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* navmenu */
+.CollapsibleContent {
+  overflow: hidden;
+}
+.CollapsibleContent[data-state="open"] {
+  animation: slideDown 300ms ease-out;
+}
+.CollapsibleContent[data-state="closed"] {
+  animation: slideUp 300ms ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-collapsible-content-height);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    height: var(--radix-collapsible-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/* Scroll bar */
+
+/* Firefox */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(120, 120, 120, 0.4) transparent !important;
+}
+
+/* WebKit (Chrome, Edge, Safari) */
+*::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(120, 120, 120, 0.4) !important;
+  border-radius: 8px !important;
+  border: 2px solid transparent !important;
+  background-clip: content-box !important;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(120, 120, 120, 0.6) !important;
 }

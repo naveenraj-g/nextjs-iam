@@ -6,20 +6,60 @@ import { OAuthClientBaseSchema, OAuthClientIdSchema } from "./base.schema";
 // form schemas (client side forms)
 
 export const CreateOAuthClientFormSchema = OAuthClientBaseSchema.pick({
-  client_name: true,
   redirect_uris: true,
-  grant_types: true,
   scope: true,
+  client_name: true,
+  client_uri: true,
+  logo_uri: true,
+  contacts: true,
+  tos_uri: true,
+  policy_uri: true,
+  software_id: true,
+  software_version: true,
+  software_statement: true,
+  post_logout_redirect_uris: true,
   token_endpoint_auth_method: true,
+  grant_types: true,
+  response_types: true,
   type: true,
-  uri: true,
+  client_secret_expires_at: true,
+  skip_consent: true,
+  enable_end_session: true,
+  require_pkce: true,
+  subject_type: true,
+  metadata: true,
 });
 
 export type TCreateOAuthClientFormSchema = z.infer<
   typeof CreateOAuthClientFormSchema
 >;
 
-export const UpdateOAuthClientFormSchema = OAuthClientBaseSchema.partial();
+export const UpdateOAuthClientFormSchema = OAuthClientIdSchema.pick({
+  client_id: true,
+}).merge(
+  z.object({
+    update: OAuthClientBaseSchema.pick({
+      scope: true,
+      client_name: true,
+      client_uri: true,
+      logo_uri: true,
+      contacts: true,
+      tos_uri: true,
+      policy_uri: true,
+      software_id: true,
+      software_version: true,
+      software_statement: true,
+      post_logout_redirect_uris: true,
+      grant_types: true,
+      response_types: true,
+      type: true,
+    }).merge(
+      z.object({
+        redirect_uris: z.array(z.string().url()).min(1).optional(),
+      }),
+    ),
+  }),
+);
 
 export type TUpdateOAuthClientFormSchema = z.infer<
   typeof UpdateOAuthClientFormSchema
@@ -28,7 +68,7 @@ export type TUpdateOAuthClientFormSchema = z.infer<
 // ------------------------------------------------------- //
 // validation schemas (used in controllers / services)
 
-export const CreateOAuthClientValidationSchema = OAuthClientBaseSchema;
+export const CreateOAuthClientValidationSchema = CreateOAuthClientFormSchema;
 
 export type TCreateOAuthClientValidationSchema = z.infer<
   typeof CreateOAuthClientValidationSchema
@@ -65,7 +105,7 @@ export type TGetOAuthClientsValidationSchema = z.infer<
 // Server Action Schemas
 
 export const CreateOAuthClientActionSchema = z.object({
-  payload: CreateOAuthClientValidationSchema,
+  payload: CreateOAuthClientFormSchema,
   transportOptions: TransportOptionsSchema.optional(),
 });
 
@@ -111,32 +151,55 @@ export type TGetOAuthClientsActionSchema = z.infer<
 // ------------------------------------------------------- //
 // Response DTO schemas
 
-export const OAuthClientDtoSchema = OAuthClientIdSchema.merge(
-  OAuthClientBaseSchema.pick({
-    client_secret_expires_at: true,
-    scope: true,
-    client_id_issued_at: true,
-    client_name: true,
-    contacts: true,
-    redirect_uris: true,
-    post_logout_redirect_uris: true,
-    token_endpoint_auth_method: true,
-    grant_types: true,
-    response_types: true,
-    public: true,
-    disabled: true,
+export const CreateOAuthClientResponseDtoSchema = OAuthClientBaseSchema.pick({
+  client_secret: true,
+  client_secret_expires_at: true,
+  scope: true,
+  client_id_issued_at: true,
+  client_name: true,
+  client_uri: true,
+  logo_uri: true,
+  contacts: true,
+  tos_uri: true,
+  policy_uri: true,
+  software_id: true,
+  software_version: true,
+  software_statement: true,
+  redirect_uris: true,
+  post_logout_redirect_uris: true,
+  token_endpoint_auth_method: true,
+  grant_types: true,
+  response_types: true,
+  public: true,
+  type: true,
+  disabled: true,
+  skip_consent: true,
+  enable_end_session: true,
+  require_pkce: true,
+  subject_type: true,
+  metadata: true,
+  // reference_id: true,
+}).merge(
+  OAuthClientIdSchema.pick({
+    client_id: true,
+    user_id: true,
   }),
 );
 
-export type TOAuthClientDtoSchema = z.infer<typeof OAuthClientDtoSchema>;
+export type TCreateOAuthClientResponseDtoSchema = z.infer<
+  typeof CreateOAuthClientResponseDtoSchema
+>;
 
-export const GetOAuthClientResponseDtoSchema = OAuthClientDtoSchema;
+export const GetOAuthClientResponseDtoSchema =
+  CreateOAuthClientResponseDtoSchema;
 
 export type TGetOAuthClientResponseDtoSchema = z.infer<
   typeof GetOAuthClientResponseDtoSchema
 >;
 
-export const GetOAuthClientsResponseDtoSchema = z.array(OAuthClientDtoSchema);
+export const GetOAuthClientsResponseDtoSchema = z.array(
+  CreateOAuthClientResponseDtoSchema,
+);
 
 export type TGetOAuthClientsResponseDtoSchema = z.infer<
   typeof GetOAuthClientsResponseDtoSchema
