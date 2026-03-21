@@ -1,11 +1,11 @@
-"server-only"
+"server-only";
 
-import { APIError, type BetterAuthOptions } from "better-auth"
-import { prismaAdapter } from "better-auth/adapters/prisma"
-import { prisma } from "../prisma/db"
-import { nextCookies } from "better-auth/next-js"
-import { getEmailVerificationTemplate } from "@/modules/client/email-templates/auth-email.templates"
-import { createAuthMiddleware } from "better-auth/api"
+import { APIError, type BetterAuthOptions } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { prisma } from "../prisma/db";
+import { nextCookies } from "better-auth/next-js";
+import { getEmailVerificationTemplate } from "@/modules/client/email-templates/auth-email.templates";
+import { createAuthMiddleware } from "better-auth/api";
 import {
   openAPI,
   admin,
@@ -14,9 +14,9 @@ import {
   twoFactor,
   username,
   createAccessControl,
-} from 'better-auth/plugins';
-import { oauthProvider } from '@better-auth/oauth-provider';
-import { sendAuthEmail } from "../utils/sendAuthEmail"
+} from "better-auth/plugins";
+import { oauthProvider } from "@better-auth/oauth-provider";
+import { sendAuthEmail } from "../utils/sendAuthEmail";
 
 const statement = {
   users: ["create", "read", "update", "delete"],
@@ -44,7 +44,7 @@ const guestRole = ac.newRole({
 
 export const authConfig = {
   database: prismaAdapter(prisma, {
-    provider: "postgresql"
+    provider: "postgresql",
   }),
 
   session: {
@@ -54,34 +54,34 @@ export const authConfig = {
     // IMPORTANT: Don't cache session for long time
     cookieCache: {
       enabled: true,
-      maxAge: 60 // 1 min
-    }
+      maxAge: 60, // 1 min
+    },
   },
 
   experimental: {
     joins: true,
   },
 
-  trustedOrigins: ['http://localhost:3000'],
+  trustedOrigins: ["http://localhost:3000"],
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: false,
     sendResetPassword: async ({ user, url }) => {
       void sendAuthEmail({
         to: user.email,
         subject: "Reset password",
-        html: `<a href="${url}">Reset password</a>`
-      })
+        html: `<a href="${url}">Reset password</a>`,
+      });
     },
-    onPasswordReset: async ({user}) => {
+    onPasswordReset: async ({ user }) => {
       console.log(`Password for user ${user.email} has been reset.`);
     },
     onExistingUserSignUp: async ({ user }) => {
       void sendAuthEmail({
         to: user.email,
-        subject: 'Sign-up attempt with your email',
-        html: '<p>Someone tried to create an account using your email address. If this was you, try signing in instead. If not, you can safely ignore this email.</p>',
+        subject: "Sign-up attempt with your email",
+        html: "<p>Someone tried to create an account using your email address. If this was you, try signing in instead. If not, you can safely ignore this email.</p>",
       });
     },
   },
@@ -96,21 +96,21 @@ export const authConfig = {
         html: getEmailVerificationTemplate(
           url,
           user.name,
-          "Betterauth Clean Architecture"
-        )
-      })
-    }
+          "Betterauth Clean Architecture",
+        ),
+      });
+    },
   },
 
   socialProviders: {
     github: {
       clientId: process.env.GITHUB_CLIENT_ID!,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET!
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     },
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!
-    }
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
   },
 
   user: {
@@ -119,7 +119,7 @@ export const authConfig = {
       sendChangeEmailConfirmation: async ({ user, url }) => {
         void sendAuthEmail({
           to: user.email,
-          subject: 'Change your email',
+          subject: "Change your email",
           html: `Click the link below to change your email: <a href="${url}">Change Email</a>`,
         });
       },
@@ -129,7 +129,7 @@ export const authConfig = {
       sendDeleteAccountVerification: async ({ user, url }) => {
         void sendAuthEmail({
           to: user.email,
-          subject: 'Delete your account',
+          subject: "Delete your account",
           html: `Click the link below to delete your account: <a href="${url}">Delete Account</a>`,
         });
       },
@@ -141,8 +141,8 @@ export const authConfig = {
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
       const protectedPaths = new Set([
-        '/oauth2/create-client',
-        '/oauth2/register',
+        "/oauth2/create-client",
+        "/oauth2/register",
       ]);
 
       if (!protectedPaths.has(ctx.path)) return;
@@ -150,25 +150,25 @@ export const authConfig = {
       const token = ctx.getCookie(ctx.context.authCookies.sessionToken.name);
 
       if (!token)
-        throw new APIError('UNAUTHORIZED', {
-          message: 'You must be logged in to perform this action',
+        throw new APIError("UNAUTHORIZED", {
+          message: "You must be logged in to perform this action",
         });
 
-      const [sessionId] = token.split('.');
+      const [sessionId] = token.split(".");
 
       const session = await ctx.context.internalAdapter.findSession(sessionId);
 
       if (!session) {
-        throw new APIError('UNAUTHORIZED', {
-          message: 'Session expired or invalid. Please log in again.',
+        throw new APIError("UNAUTHORIZED", {
+          message: "Session expired or invalid. Please log in again.",
         });
       }
 
       const user = session.user;
 
-      if (user.role !== 'superadmin') {
-        throw new APIError('FORBIDDEN', {
-          message: 'Only superadmin can create OAuth clients',
+      if (user.role !== "superadmin") {
+        throw new APIError("FORBIDDEN", {
+          message: "Only superadmin can create OAuth clients",
         });
       }
     }),
@@ -181,7 +181,7 @@ export const authConfig = {
       minUsernameLength: 4,
       maxUsernameLength: 32,
       usernameValidator: (username) => {
-        if (username === 'admin' || username === 'superadmin') {
+        if (username === "admin" || username === "superadmin") {
           return false;
         }
         return true;
@@ -194,7 +194,7 @@ export const authConfig = {
         sendOTP: async ({ user, otp }) => {
           void sendAuthEmail({
             to: user.email,
-            subject: '2 FA OTP',
+            subject: "2 FA OTP",
             html: `Your 2 FA OTP: ${otp}`,
           });
         },
@@ -212,8 +212,8 @@ export const authConfig = {
         superadmin: superAdminRole,
         guest: guestRole,
       },
-      adminRoles: ['admin', 'superadmin'],
-      defaultRole: 'guest',
+      adminRoles: ["admin", "superadmin"],
+      defaultRole: "guest",
     }),
 
     oauthProvider({
@@ -227,21 +227,21 @@ export const authConfig = {
         oauthAuthServerConfig: true,
       },
 
-      scopes: ['openid', 'profile', 'email', 'offline_access'],
+      scopes: ["openid", "profile", "email", "offline_access"],
 
-      storeClientSecret: 'hashed',
+      storeClientSecret: "hashed",
 
       allowDynamicClientRegistration: false,
 
       clientPrivileges: ({ user }) => {
         if (!user) return false;
-        return user.role === 'superadmin' || user.role === 'admin';
+        return user.role === "superadmin" || user.role === "admin";
       },
 
-      validAudiences: ['http://localhost:3000'],
+      validAudiences: ["http://localhost:3000"],
     }),
 
     // NOTE: This plugin make sure the application knows how to set cookies in next.js, it is required for server side operations with better-auth
-    nextCookies()
-  ]
-} satisfies BetterAuthOptions
+    nextCookies(),
+  ],
+} satisfies BetterAuthOptions;

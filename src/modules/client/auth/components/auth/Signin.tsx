@@ -71,10 +71,18 @@ function Signin() {
   }
 
   async function handleSignin(values: TSigninFormSchema) {
+    const params = window.location.search;
     await execute({
       payload: values,
+      transportOptions: {
+        shouldRedirect: params ? true : undefined,
+        url: params ? `/api/auth/oauth2/authorize${params}` : undefined,
+      },
     });
   }
+
+  const queryString =
+    typeof window !== "undefined" ? window.location.search : "";
 
   return (
     <Card className="max-w-sm w-full mx-auto">
@@ -196,7 +204,7 @@ function Signin() {
                   href="/auth/magic-link"
                   className={cn(
                     buttonVariants({ variant: "secondary" }),
-                    "w-full"
+                    "w-full",
                   )}
                 >
                   <Mail /> Sign in with Magic Link
@@ -229,7 +237,7 @@ function Signin() {
       <CardFooter className="flex items-center gap-1.5 w-fit mx-auto text-sm text-muted-foreground">
         {"Don't have an account?"}
         <Link
-          href="/auth/sign-up"
+          href={`/auth/sign-up${queryString}`}
           className="text-foreground underline underline-offset-2"
         >
           Sign Up

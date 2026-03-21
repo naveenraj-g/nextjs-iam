@@ -30,6 +30,8 @@ export class OAuthClientService implements IOAuthClientService {
         },
       });
 
+      console.log(res);
+
       return await CreateOAuthClientResponseDtoSchema.parseAsync(res);
     } catch (error) {
       throw error;
