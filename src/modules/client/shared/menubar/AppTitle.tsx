@@ -7,7 +7,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 export function AppTitle() {
   const { setOpenMobile } = useSidebar();

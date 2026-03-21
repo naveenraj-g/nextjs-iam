@@ -36,7 +36,7 @@ import { signupAction } from "@/modules/server/presentation/actions/auth";
 import { toast } from "sonner";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import OauthButton from "./OauthButton";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import AuthSeparator from "./AuthSeparator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";

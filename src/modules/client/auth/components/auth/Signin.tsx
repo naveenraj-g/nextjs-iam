@@ -34,7 +34,7 @@ import { useServerAction } from "zsa-react";
 import { signinAction } from "@/modules/server/presentation/actions/auth";
 import { toast } from "sonner";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import OauthButton from "./OauthButton";
 import AuthSeparator from "./AuthSeparator";
 import { Checkbox } from "@/components/ui/checkbox";

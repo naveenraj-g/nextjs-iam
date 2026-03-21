@@ -30,7 +30,7 @@ import { toast } from "sonner";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import OauthButton from "./OauthButton";
 import AuthSeparator from "./AuthSeparator";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 function SigninWithMagicLink() {
@@ -56,7 +56,7 @@ function SigninWithMagicLink() {
   });
 
   async function handleForgetPassword(
-    values: TForgetPasswordOrMagicLinkFormSchema
+    values: TForgetPasswordOrMagicLinkFormSchema,
   ) {}
 
   return (

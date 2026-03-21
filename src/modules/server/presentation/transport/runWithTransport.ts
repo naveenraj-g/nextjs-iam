@@ -1,8 +1,9 @@
 "server-only";
 
-import { redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
 import { revalidatePath } from "next/cache";
 import { mapErrorToZSA } from "../../shared/errors/mappers/mapErrorToZSA";
+import { getLocale } from "next-intl/server";
 
 type TransportDecision = {
   url?: string | null;
@@ -15,9 +16,10 @@ export async function runWithTransport<T>(
   executor: () => Promise<{
     result: T;
     transport?: TransportDecision;
-  }>
+  }>,
 ): Promise<T> {
   try {
+    const locale = await getLocale();
     const { result, transport } = await executor();
 
     if (transport?.url && transport?.shouldRevalidate) {
@@ -28,7 +30,7 @@ export async function runWithTransport<T>(
     // redirect() intentionally throws a Next.js control signal.
     // This must NOT be caught or transformed.
     if (transport?.url && transport?.shouldRedirect) {
-      redirect(transport.url);
+      redirect({ href: transport.url, locale });
     }
     return result;
   } catch (err) {

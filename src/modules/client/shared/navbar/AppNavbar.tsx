@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeSwitcher } from "@/theme/ThemeSwitcher";
+import LocaleSwitcher from "../LocaleSwitcher";
 
 const AppNavbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -46,6 +47,9 @@ const AppNavbar = () => {
         </div>
 
         <div className="flex items-center gap-6">
+          <div>
+            <LocaleSwitcher />
+          </div>
           <Bell className="h-5 w-5 block text-zinc-500 dark:text-zinc-300 cursor-pointer" />
           <ThemeSwitcher />
           <NavUser />

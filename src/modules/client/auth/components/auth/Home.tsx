@@ -4,7 +4,7 @@ import { signoutAction } from "@/modules/server/presentation/actions/auth";
 import { useServerAction } from "zsa-react";
 import { TSession } from "../../types/auth-types";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 function Home({ session }: { session: TSession | null }) {
   const { execute: executeSignoutAction, isPending: isSignoutActionPending } =

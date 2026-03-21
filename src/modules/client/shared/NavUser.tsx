@@ -10,8 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenuButton, useSidebar } from "@/components/ui/sidebar";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 // import { signOut } from "@/modules/client/auth/server-actions/auth-actions";
 // import { ThemeSwitcher } from "@/theme/theme-switcher";

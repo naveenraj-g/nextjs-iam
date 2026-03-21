@@ -30,8 +30,8 @@ import { toast } from "sonner";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import OauthButton from "./OauthButton";
 import AuthSeparator from "./AuthSeparator";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useRouter } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 
 function ForgetPassword() {
@@ -59,7 +59,7 @@ function ForgetPassword() {
   });
 
   async function handleForgetPassword(
-    values: TForgetPasswordOrMagicLinkFormSchema
+    values: TForgetPasswordOrMagicLinkFormSchema,
   ) {}
 
   return (
@@ -113,7 +113,7 @@ function ForgetPassword() {
                   href="/auth/magic-link"
                   className={cn(
                     buttonVariants({ variant: "secondary" }),
-                    "w-full"
+                    "w-full",
                   )}
                 >
                   <Mail /> Sign in with Magic Link
