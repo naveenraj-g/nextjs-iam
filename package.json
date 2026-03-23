@@ -10,11 +10,12 @@
     "db:generate": "pnpm dlx prisma generate --schema ./src/modules/server/prisma/schema/schema.prisma",
     "db:push": "pnpm dlx prisma db push --schema ./src/modules/server/prisma/schema/schema.prisma",
     "db:studio": "pnpm dlx prisma studio --schema ./src/modules/server/prisma/schema/schema.prisma",
-    "auth:generate": "pnpm dlx @better-auth/cli generate --config ./src/modules/server/auth-provider/auth.ts --output ./src/modules/server/prisma/schema/schema.prisma",
+    "auth:generate": "pnpm dlx @better-auth/cli generate --config ./src/modules/server/auth-provider/auth.ts --output ./prisma/schema/schema.prisma",
     "deps": "pnpm dlx madge src/modules --circular --extensions ts",
     "deps:graph": "madge src/modules --image deps.svg --extensions ts,tsx"
   },
   "dependencies": {
+    "@better-auth/api-key": "^1.5.6",
     "@better-auth/oauth-provider": "^1.5.4",
     "@better-auth/prisma-adapter": "^1.5.4",
     "@evyweb/ioctopus": "^1.3.1",

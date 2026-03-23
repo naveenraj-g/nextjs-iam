@@ -1,11 +1,11 @@
 "server-only";
 
+// packages import
 import { APIError, type BetterAuthOptions } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prisma } from "../prisma/db";
 import { nextCookies } from "better-auth/next-js";
-import { getEmailVerificationTemplate } from "@/modules/client/email-templates/auth-email.templates";
+import { prismaAdapter } from "better-auth/adapters/prisma";
 import { createAuthMiddleware } from "better-auth/api";
+import { oauthProvider } from "@better-auth/oauth-provider";
 import {
   openAPI,
   admin,
@@ -15,8 +15,12 @@ import {
   username,
   createAccessControl,
 } from "better-auth/plugins";
-import { oauthProvider } from "@better-auth/oauth-provider";
-import { sendAuthEmail } from "../utils/sendAuthEmail";
+import { apiKey } from "@better-auth/api-key";
+
+// local import
+import { prisma } from "../../../../prisma/db";
+import { getEmailVerificationTemplate } from "@/modules/shared/email-templates/auth-email.templates";
+import { sendAuthEmail } from "@/modules/server/utils/sendAuthEmail";
 
 const statement = {
   users: ["create", "read", "update", "delete"],
@@ -240,6 +244,8 @@ export const authConfig = {
 
       validAudiences: ["http://localhost:3000"],
     }),
+
+    apiKey({ defaultPrefix: "drgodly_" }),
 
     // NOTE: This plugin make sure the application knows how to set cookies in next.js, it is required for server side operations with better-auth
     nextCookies(),
