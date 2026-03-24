@@ -1,15 +1,17 @@
 import { IOAuthClientService } from "@/modules/server/core/admin/domain/interfaces/oauthclient.service.interface";
-import {
-  TCreateOAuthClientPayload,
-  TUpdateOAuthClientPayload,
-  TDeleteOAuthClientPayload,
-  TGetOAuthClientPayload,
-} from "@/modules/entities/types/admin/oauthclient.type";
+import { TCreateOAuthClientPayload } from "@/modules/entities/types/admin/oauthclient.type";
 import {
   TGetOAuthClientsResponseDtoSchema,
   GetOAuthClientsResponseDtoSchema,
   TCreateOAuthClientResponseDtoSchema,
   CreateOAuthClientResponseDtoSchema,
+  TGetOAuthClientResponseDtoSchema,
+  GetOAuthClientResponseDtoSchema,
+  TDeleteOAuthClientResponseDtoSchema,
+  TUpdateOAuthClientValidationSchema,
+  TDeleteOAuthClientValidationSchema,
+  TGetOAuthClientValidationSchema,
+  TRotateClientSecretValidationSchema,
 } from "@/modules/entities/schemas/admin/oauthclient/oauthclient.schema";
 import { auth } from "@/modules/server/auth-provider/auth";
 import { headers } from "next/headers";
@@ -38,30 +40,63 @@ export class OAuthClientService implements IOAuthClientService {
     }
   }
 
-  async updateOAuthClient(payload: TUpdateOAuthClientPayload): Promise<void> {
-    //   try {
-    //     type AdminCreateOAuthUpdateParams =
-    // Parameters<typeof auth.api.updateOAuthClient>[0];
-    //     const res = await auth.api.updateOAuthClient({
-    //       headers: await headers(),
-    //       body: {
-    //         client_id: payload.client_id,
-    //         update: {
-    //         }
-    //       }
-    //     })
-    //   } catch (error) {
-    //     throw error;
-    //   }
-    throw new Error("Method not implemented.");
+  async updateOAuthClient(
+    payload: TUpdateOAuthClientValidationSchema,
+  ): Promise<TGetOAuthClientResponseDtoSchema> {
+    try {
+      const res = await auth.api.adminUpdateOAuthClient({
+        headers: await headers(),
+        body: {
+          client_id: payload.client_id,
+          update: payload.update,
+        },
+      });
+      return await GetOAuthClientResponseDtoSchema.parseAsync(res);
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async deleteOAuthClient(payload: TDeleteOAuthClientPayload): Promise<void> {
-    throw new Error("Method not implemented.");
+  async deleteOAuthClient(
+    payload: TDeleteOAuthClientValidationSchema,
+  ): Promise<TDeleteOAuthClientResponseDtoSchema> {
+    try {
+      await auth.api.deleteOAuthClient({
+        headers: await headers(),
+        body: { client_id: payload.client_id },
+      });
+      return { success: true };
+    } catch (error) {
+      throw error;
+    }
   }
 
-  async getOAuthClient(payload: TGetOAuthClientPayload): Promise<void> {
-    throw new Error("Method not implemented.");
+  async getOAuthClient(
+    payload: TGetOAuthClientValidationSchema,
+  ): Promise<TGetOAuthClientResponseDtoSchema> {
+    try {
+      const res = await auth.api.getOAuthClient({
+        headers: await headers(),
+        query: { client_id: payload.client_id },
+      });
+      return await GetOAuthClientResponseDtoSchema.parseAsync(res);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async rotateClientSecret(
+    payload: TRotateClientSecretValidationSchema,
+  ): Promise<TGetOAuthClientResponseDtoSchema> {
+    try {
+      const res = await auth.api.rotateClientSecret({
+        headers: await headers(),
+        body: { client_id: payload.client_id },
+      });
+      return await GetOAuthClientResponseDtoSchema.parseAsync(res);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getOAuthClients(): Promise<TGetOAuthClientsResponseDtoSchema> {

@@ -1,10 +1,12 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { Edit, EllipsisVertical, Trash2 } from "lucide-react";
+import { Edit, EllipsisVertical, RefreshCw, Trash2 } from "lucide-react";
 import { TanstackTableColumnSorting } from "@/modules/client/shared/components/table/tanstack-table-column-sorting";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -34,26 +36,9 @@ export const oauthClientsTableColumn = (): ColumnDef<TOAuthClient>[] => [
     accessorKey: "client_id",
     cell({ row }) {
       return (
-        <div className="flex items-center gap-2">
-          <span
-          // className={cn(
-          //   buttonVariants({
-          //     size: "sm",
-          //     variant: "default",
-          //     className:
-          //       "cursor-default h-6 rounded-lg bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary",
-          //   }),
-          // )}
-          >
-            {row.original.client_id}
-          </span>
-          {/* <Copy
-            onClick={() =>
-              navigator.clipboard.writeText(row.original.client_id)
-            }
-            className="size-4"
-          /> */}
-        </div>
+        <span className="font-mono text-xs text-muted-foreground">
+          {row.original.client_id}
+        </span>
       );
     },
   },
@@ -134,12 +119,11 @@ export const oauthClientsTableColumn = (): ColumnDef<TOAuthClient>[] => [
       return (
         <Badge
           className={cn(
-            buttonVariants({
-              size: "sm",
-              variant: "default",
-              className:
-                "cursor-default h-6 rounded-lg bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary",
-            }),
+            buttonVariants({ size: "sm", variant: "default" }),
+            "cursor-default h-6 rounded-lg",
+            disabled
+              ? "bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground"
+              : "bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/20 hover:text-emerald-600 dark:text-emerald-400",
           )}
         >
           {disabled ? "Disabled" : "Active"}
@@ -150,11 +134,11 @@ export const oauthClientsTableColumn = (): ColumnDef<TOAuthClient>[] => [
   {
     header: "Created At",
     accessorKey: "client_id_issued_at",
-    cell: ({ row }) => {
-      const createdAt = row.original.client_id_issued_at;
-      const formattedDate = formatSmartDate(createdAt);
-      return <span>{formattedDate}</span>;
-    },
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {formatSmartDate(row.original.client_id_issued_at)}
+      </span>
+    ),
   },
   {
     header: "ACTIONS",
@@ -174,31 +158,60 @@ export const oauthClientsTableColumn = (): ColumnDef<TOAuthClient>[] => [
             <EllipsisVertical />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="left">
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              {oauthClientData.client_name ?? oauthClientData.client_id}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
             <DropdownMenuItem
-              className="cursor-pointer space-x-2"
+              className="cursor-pointer gap-2"
               onClick={() =>
                 openModal({
                   type: "editOAuthClient",
+                  data: {
+                    clientId: oauthClientData.client_id,
+                    clientName: oauthClientData.client_name ?? undefined,
+                    oauthClient: oauthClientData,
+                  },
                 })
               }
             >
-              <div className="flex items-center gap-2">
-                <Edit />
-                Edit
-              </div>
+              <Edit className="h-4 w-4" />
+              Edit
             </DropdownMenuItem>
+
             <DropdownMenuItem
-              className="cursor-pointer space-x-2 text-rose-600 hover:!text-rose-600 dark:text-rose-500 dark:hover:!text-rose-500"
+              className="cursor-pointer gap-2"
+              onClick={() =>
+                openModal({
+                  type: "rotateClientSecret",
+                  data: {
+                    clientId: oauthClientData.client_id,
+                    clientName: oauthClientData.client_name ?? undefined,
+                  },
+                })
+              }
+            >
+              <RefreshCw className="h-4 w-4" />
+              Rotate Secret
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              className="cursor-pointer gap-2 text-rose-600 hover:!text-rose-600 dark:text-rose-500 dark:hover:!text-rose-500"
               onClick={() =>
                 openModal({
                   type: "deleteOAuthClient",
+                  data: {
+                    clientId: oauthClientData.client_id,
+                    clientName: oauthClientData.client_name ?? undefined,
+                  },
                 })
               }
             >
-              <div className="flex items-center gap-2">
-                <Trash2 className="text-rose-600 dark:text-rose-500" />
-                Delete
-              </div>
+              <Trash2 className="h-4 w-4 text-rose-600 dark:text-rose-500" />
+              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

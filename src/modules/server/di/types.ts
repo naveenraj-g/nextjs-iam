@@ -1,4 +1,5 @@
 import { IOAuthClientService } from "../core/admin/domain/interfaces/oauthclient.service.interface";
+import { IUsersService } from "../core/admin/domain/interfaces/users.service.interface";
 import { IAuthService } from "../core/auth/domain/interfaces/auth.service.interface";
 import { IEmailService } from "../core/common/email/domain/interfaces/email.service.interface";
 
@@ -9,6 +10,7 @@ export const DI_SYMBOLS = {
   IAuthService: Symbol.for("IAuthService"),
   IEmailService: Symbol.for("IEmailService"),
   IOAuthClientService: Symbol.for("IOAuthClientService"),
+  IUsersService: Symbol.for("IUsersService"),
 };
 
 export interface DI_RETURN_TYPES {
@@ -18,4 +20,5 @@ export interface DI_RETURN_TYPES {
   IAuthService: IAuthService;
   IEmailService: IEmailService;
   IOAuthClientService: IOAuthClientService;
+  IUsersService: IUsersService;
 }

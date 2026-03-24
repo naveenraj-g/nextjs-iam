@@ -83,13 +83,17 @@ export type TUpdateOAuthClientValidationSchema = z.infer<
   typeof UpdateOAuthClientValidationSchema
 >;
 
-export const DeleteOAuthClientValidationSchema = OAuthClientIdSchema;
+export const DeleteOAuthClientValidationSchema = z.object({
+  client_id: z.string(),
+});
 
 export type TDeleteOAuthClientValidationSchema = z.infer<
   typeof DeleteOAuthClientValidationSchema
 >;
 
-export const GetOAuthClientValidationSchema = OAuthClientIdSchema;
+export const GetOAuthClientValidationSchema = z.object({
+  client_id: z.string(),
+});
 
 export type TGetOAuthClientValidationSchema = z.infer<
   typeof GetOAuthClientValidationSchema
@@ -211,4 +215,24 @@ export const DeleteOAuthClientResponseDtoSchema = z.object({
 
 export type TDeleteOAuthClientResponseDtoSchema = z.infer<
   typeof DeleteOAuthClientResponseDtoSchema
+>;
+
+// ------------------------------------------------------- //
+// Rotate Client Secret
+
+export const RotateClientSecretValidationSchema = z.object({
+  client_id: z.string(),
+});
+
+export type TRotateClientSecretValidationSchema = z.infer<
+  typeof RotateClientSecretValidationSchema
+>;
+
+export const RotateClientSecretActionSchema = z.object({
+  payload: RotateClientSecretValidationSchema,
+  transportOptions: TransportOptionsSchema.optional(),
+});
+
+export type TRotateClientSecretActionSchema = z.infer<
+  typeof RotateClientSecretActionSchema
 >;

@@ -5,6 +5,7 @@ import { APIError, type BetterAuthOptions } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { createAuthMiddleware } from "better-auth/api";
+import { getJwtToken } from "better-auth/plugins/jwt";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import {
   openAPI,
@@ -16,6 +17,9 @@ import {
   createAccessControl,
 } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
+import { agentAuth } from "@better-auth/agent-auth";
+import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
+import { createFromOpenAPI } from "@better-auth/agent-auth/openapi";
 
 // local import
 import { prisma } from "../../../../prisma/db";
@@ -23,7 +27,7 @@ import { getEmailVerificationTemplate } from "@/modules/shared/email-templates/a
 import { sendAuthEmail } from "@/modules/server/utils/sendAuthEmail";
 
 const statement = {
-  users: ["create", "read", "update", "delete"],
+  ...defaultStatements,
   oauthClients: ["create", "read", "update", "delete"],
   organizations: ["create", "read", "update", "delete"],
 } as const;
@@ -31,20 +35,21 @@ const statement = {
 const ac = createAccessControl(statement);
 
 const adminRole = ac.newRole({
-  users: ["read", "update"],
   oauthClients: ["create", "read"],
   organizations: ["read"],
 });
 
 const superAdminRole = ac.newRole({
-  users: ["create", "read", "update", "delete"],
+  ...adminAc.statements,
   oauthClients: ["create", "read", "update", "delete"],
   organizations: ["create", "read", "update", "delete"],
 });
 
 const guestRole = ac.newRole({
-  users: ["read"],
+  user: ["get"],
 });
+
+const spec = await fetch(process.env.FHIR_OPENAPI_URL!).then((r) => r.json());
 
 export const authConfig = {
   database: prismaAdapter(prisma, {
@@ -247,7 +252,63 @@ export const authConfig = {
 
     apiKey({ defaultPrefix: "drgodly_" }),
 
+    agentAuth({
+      ...createFromOpenAPI(spec, {
+        baseUrl: process.env.FHIR_SERVER_URL!,
+        async resolveHeaders({ ctx }) {
+          const token = await getJwtToken(ctx);
+
+          return {
+            Authorization: `Bearer ${token}`,
+          };
+        },
+      }),
+    }),
+
     // NOTE: This plugin make sure the application knows how to set cookies in next.js, it is required for server side operations with better-auth
     nextCookies(),
   ],
 } satisfies BetterAuthOptions;
+
+/* 
+{
+      providerName: "My API",
+      providerDescription: "My MCP-enabled API",
+
+      modes: ["delegated", "autonomous"],
+
+      capabilities: [
+        {
+          name: "hello_world",
+          description: "Test capability",
+        },
+        {
+          name: "create_user",
+          description: "Create a new user",
+          input: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+            },
+            required: ["name"],
+          },
+        },
+      ],
+
+      async onExecute({ capability, arguments: args, agentSession }) {
+        if (capability === "hello_world") {
+          return { message: "Hello from BetterAuth 🚀" };
+        }
+
+        if (capability === "create_user") {
+          return {
+            ok: true,
+            name: args?.name,
+            createdBy: agentSession.user?.id,
+          };
+        }
+
+        throw new Error("Unknown capability");
+      },
+    }
+*/

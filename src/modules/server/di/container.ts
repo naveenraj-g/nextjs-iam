@@ -1,15 +1,21 @@
-import { createContainer } from "@evyweb/ioctopus"
-import { DI_RETURN_TYPES, DI_SYMBOLS } from "./types"
-import { registerAuthModule, registerEmailModule, registerOAuthClientModule } from "./modules"
+import { createContainer } from "@evyweb/ioctopus";
+import { DI_RETURN_TYPES, DI_SYMBOLS } from "./types";
+import {
+  registerAuthModule,
+  registerEmailModule,
+  registerOAuthClientModule,
+  registerUsersModule,
+} from "./modules";
 
-const ApplicationContainer = createContainer()
+const ApplicationContainer = createContainer();
 
-registerAuthModule(ApplicationContainer)
-registerEmailModule(ApplicationContainer)
+registerAuthModule(ApplicationContainer);
+registerEmailModule(ApplicationContainer);
 registerOAuthClientModule(ApplicationContainer);
+registerUsersModule(ApplicationContainer);
 
 export const getInjection = <K extends keyof typeof DI_SYMBOLS>(
-  symbol: K
+  symbol: K,
 ): DI_RETURN_TYPES[K] => {
-  return ApplicationContainer.get(DI_SYMBOLS[symbol])
-}
+  return ApplicationContainer.get(DI_SYMBOLS[symbol]);
+};
