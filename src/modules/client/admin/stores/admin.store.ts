@@ -13,7 +13,9 @@ export type ModalType =
   | "removeUser"
   | "setUserPassword"
   | "revokeUserSessions"
-  | "impersonateUser";
+  | "impersonateUser"
+  | "revokeSession"
+  | "revokeAllSessions";
 
 export interface ModalData {
   // Users
@@ -27,6 +29,10 @@ export interface ModalData {
   clientId?: string;
   clientName?: string;
   oauthClient?: TOAuthClient;
+  // Sessions
+  sessionToken?: string;
+  sessionIp?: string | null;
+  sessionUserAgent?: string | null;
 }
 
 interface IAdminStore {

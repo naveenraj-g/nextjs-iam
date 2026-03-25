@@ -5,6 +5,7 @@ import {
   adminClient,
 } from "better-auth/client/plugins";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
+import { agentAuthClient } from "@better-auth/agent-auth/client";
 
 export const authClient = createAuthClient({
   /** The base URL of the server (optional if you're using the same domain) */
@@ -14,6 +15,7 @@ export const authClient = createAuthClient({
     organizationClient(),
     adminClient(),
     oauthProviderClient(),
+    agentAuthClient(),
   ],
 });
 

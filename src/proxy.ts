@@ -4,7 +4,7 @@ import { routing } from "./i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
-const allowedOrigin = "http://localhost:3000";
+const allowedOrigin = process.env.ALLOWED_ORIGIN!;
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;

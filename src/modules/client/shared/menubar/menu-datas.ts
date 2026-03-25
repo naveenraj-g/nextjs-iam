@@ -38,8 +38,8 @@ export const adminSidebarData = {
           icon: "building-2",
         },
         {
-          title: "Groups",
-          url: "/admin/groups",
+          title: "Teams",
+          url: "/admin/teams",
           icon: "users",
         },
       ],
