@@ -212,7 +212,11 @@ export const authConfig = {
 
     jwt(),
 
-    organization(),
+    organization({
+      teams: {
+        enabled: true,
+      },
+    }),
 
     admin({
       ac,
