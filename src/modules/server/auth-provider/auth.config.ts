@@ -14,6 +14,7 @@ import {
   organization,
   twoFactor,
   username,
+  lastLoginMethod,
   createAccessControl,
 } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
@@ -259,6 +260,8 @@ export const authConfig = {
 
       validAudiences: ["http://localhost:3000"],
     }),
+
+    lastLoginMethod(),
 
     apiKey({ defaultPrefix: "drgodly_" }),
 

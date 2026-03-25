@@ -9,12 +9,14 @@ import { TSocialProviders } from "@/modules/entities/enums/auth/auth.enum";
 import { useServerAction } from "zsa-react";
 import { signinWithSocialAction } from "@/modules/server/presentation/actions/auth/auth.actions";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
+import { LastUsedBadge } from "@/components/LastedUsedBadge";
 
 type Props = {
   oauthName: TSocialProviders;
   label: string;
   isFormSubmitting: boolean;
   className?: string;
+  isLastUsed?: boolean;
 };
 
 const OauthButton = ({
@@ -22,6 +24,7 @@ const OauthButton = ({
   label,
   isFormSubmitting,
   className,
+  isLastUsed = false,
 }: Props) => {
   const { execute, isPending } = useServerAction(signinWithSocialAction, {
     onError({ err }) {
@@ -33,30 +36,33 @@ const OauthButton = ({
   });
 
   return (
-    <Button
-      variant="outline"
-      disabled={isPending || isFormSubmitting}
-      className={cn(
-        "flex-1 items-center justify-center cursor-pointer border-2",
-        className
-      )}
-      onClick={async () => {
-        await execute({ provider: oauthName });
-      }}
-    >
-      <span className="pointer-events-none">
-        {!isPending ? (
-          oauthName === "google" ? (
-            <FcGoogle size={18} aria-hidden="true" />
-          ) : (
-            <FaGithub size={18} aria-hidden="true" />
-          )
-        ) : (
-          <Loader2 className="animate-spin" />
+    <div className="relative flex-1">
+      {isLastUsed && <LastUsedBadge />}
+      <Button
+        variant="outline"
+        disabled={isPending || isFormSubmitting}
+        className={cn(
+          "w-full items-center justify-center cursor-pointer border-2",
+          className,
         )}
-      </span>
-      {label}
-    </Button>
+        onClick={async () => {
+          await execute({ provider: oauthName });
+        }}
+      >
+        <span className="pointer-events-none">
+          {!isPending ? (
+            oauthName === "google" ? (
+              <FcGoogle size={18} aria-hidden="true" />
+            ) : (
+              <FaGithub size={18} aria-hidden="true" />
+            )
+          ) : (
+            <Loader2 className="animate-spin" />
+          )}
+        </span>
+        {label}
+      </Button>
+    </div>
   );
 };
 

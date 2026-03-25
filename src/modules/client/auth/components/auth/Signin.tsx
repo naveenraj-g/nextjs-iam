@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { authClient } from "@/modules/client/auth/auth-client";
 import {
   InputGroup,
   InputGroupAddon,
@@ -39,9 +40,19 @@ import OauthButton from "./OauthButton";
 import AuthSeparator from "./AuthSeparator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { LastUsedBadge } from "@/components/LastedUsedBadge";
 
 function Signin() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [lastMethod, setLastMethod] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const lastLogin = authClient.getLastUsedLoginMethod();
+      console.log(lastLogin);
+      setLastMethod(lastLogin);
+    })();
+  }, []);
 
   const form = useForm<TSigninFormSchema>({
     resolver: zodResolver(SigninFormSchema),
@@ -185,30 +196,36 @@ function Signin() {
                       </Field>
                     )}
                   />
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="animate-spin" />
-                        Sign In
-                      </>
-                    ) : (
-                      "Sign In"
-                    )}
-                  </Button>
+                  <div className="relative">
+                    {lastMethod === "email" && <LastUsedBadge />}
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="animate-spin" />
+                          Sign In
+                        </>
+                      ) : (
+                        "Sign In"
+                      )}
+                    </Button>
+                  </div>
                 </div>
-                <Link
-                  href="/auth/magic-link"
-                  className={cn(
-                    buttonVariants({ variant: "secondary" }),
-                    "w-full",
-                  )}
-                >
-                  <Mail /> Sign in with Magic Link
-                </Link>
+                <div className="relative">
+                  {lastMethod === "magic-link" && <LastUsedBadge />}
+                  <Link
+                    href="/auth/magic-link"
+                    className={cn(
+                      buttonVariants({ variant: "secondary" }),
+                      "w-full",
+                    )}
+                  >
+                    <Mail /> Sign in with Magic Link
+                  </Link>
+                </div>
               </div>
 
               <AuthSeparator />
@@ -219,11 +236,13 @@ function Signin() {
                     oauthName="google"
                     label="Google"
                     isFormSubmitting={isSubmitting}
+                    isLastUsed={lastMethod === "google"}
                   />
                   <OauthButton
                     oauthName="github"
                     label="GitHub"
                     isFormSubmitting={isSubmitting}
+                    isLastUsed={lastMethod === "github"}
                   />
                 </div>
                 <Button variant="secondary">
