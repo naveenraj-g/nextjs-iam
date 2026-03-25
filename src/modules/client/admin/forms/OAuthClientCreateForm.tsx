@@ -1,9 +1,10 @@
 "use client";
 
-import { useFormContext, useFieldArray } from "react-hook-form";
+import { useFormContext, useFieldArray, useController } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { SelectItem } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { Loader2, Plus, Trash } from "lucide-react";
 
@@ -24,6 +25,10 @@ import {
   FormSelect,
   FormSwitch,
 } from "../../shared/custom-form-fields";
+import {
+  GrantType,
+  ResponseType,
+} from "@/modules/entities/enums/admin/oauth-client/oauth-client.enum";
 import { useEffect } from "react";
 
 interface OAuthClientCreateFormProps {
@@ -46,7 +51,7 @@ export function OAuthClientCreateForm({
     await onSubmit(data);
   };
 
-  // 🔹 Field arrays
+  // Field arrays
   const redirectUris = useFieldArray({
     control: control as never,
     name: "redirect_uris",
@@ -56,6 +61,38 @@ export function OAuthClientCreateForm({
     control: control as never,
     name: "post_logout_redirect_uris",
   });
+
+  const contacts = useFieldArray({
+    control: control as never,
+    name: "contacts",
+  });
+
+  const { field: grantTypesField } = useController({
+    name: "grant_types",
+    control,
+  });
+
+  const { field: responseTypesField } = useController({
+    name: "response_types",
+    control,
+  });
+
+  const selectedGrantTypes: string[] = grantTypesField.value ?? [];
+  const selectedResponseTypes: string[] = responseTypesField.value ?? [];
+
+  function toggleGrantType(value: string) {
+    const updated = selectedGrantTypes.includes(value)
+      ? selectedGrantTypes.filter((v) => v !== value)
+      : [...selectedGrantTypes, value];
+    grantTypesField.onChange(updated);
+  }
+
+  function toggleResponseType(value: string) {
+    const updated = selectedResponseTypes.includes(value)
+      ? selectedResponseTypes.filter((v) => v !== value)
+      : [...selectedResponseTypes, value];
+    responseTypesField.onChange(updated);
+  }
 
   useEffect(() => {
     if (redirectUris.fields.length === 0) {
@@ -84,6 +121,8 @@ export function OAuthClientCreateForm({
               name="scope"
               label="Scope"
               placeholder="openid profile email"
+              description="Space-separated list of OAuth scopes this client can request."
+              descriptionPlace="bottom"
             />
 
             <FormInput
@@ -91,6 +130,8 @@ export function OAuthClientCreateForm({
               name="client_uri"
               label="Client URL"
               placeholder="https://example.com"
+              description="Homepage URL of your application."
+              descriptionPlace="bottom"
             />
 
             <FormInput
@@ -98,8 +139,79 @@ export function OAuthClientCreateForm({
               name="logo_uri"
               label="Logo URL"
               placeholder="https://example.com/logo.png"
+              description="URL of the application's logo or icon."
+              descriptionPlace="bottom"
             />
           </FieldGroup>
+        </FieldSet>
+      </FieldGroup>
+
+      {/* Legal */}
+      <FieldGroup>
+        <FieldSet>
+          <FieldLegend>Legal URLs</FieldLegend>
+          <FieldGroup className="grid sm:grid-cols-2 gap-4">
+            <FormInput
+              control={control}
+              name="tos_uri"
+              label="Terms of Service URL"
+              placeholder="https://example.com/tos"
+              description="Link to the Terms of Service for this application."
+              descriptionPlace="bottom"
+            />
+
+            <FormInput
+              control={control}
+              name="policy_uri"
+              label="Privacy Policy URL"
+              placeholder="https://example.com/privacy"
+              description="Link to the Privacy Policy for this application."
+              descriptionPlace="bottom"
+            />
+          </FieldGroup>
+        </FieldSet>
+      </FieldGroup>
+
+      {/* Contacts */}
+      <FieldGroup>
+        <FieldSet>
+          <FieldLegend>Contacts</FieldLegend>
+          <Field>
+            <FieldLabel>Admin Contacts</FieldLabel>
+            <FieldDescription>
+              Email addresses of people responsible for this client.
+            </FieldDescription>
+            <div className="space-y-2">
+              {contacts.fields.map((item, index) => (
+                <div key={item.id} className="flex gap-2 items-center">
+                  <FormInput
+                    control={control}
+                    name={`contacts.${index}`}
+                    placeholder="admin@example.com"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => contacts.remove(index)}
+                    className="self-end"
+                  >
+                    <Trash size={16} />
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => contacts.append("" as never)}
+                className="flex items-center gap-2"
+              >
+                <Plus size={16} />
+                Add Contact
+              </Button>
+            </div>
+          </Field>
         </FieldSet>
       </FieldGroup>
 
@@ -200,13 +312,13 @@ export function OAuthClientCreateForm({
           <FieldLegend>OAuth Configuration</FieldLegend>
           <FieldGroup className="grid sm:grid-cols-2 gap-4">
             {/* Auth Method */}
-
             <FormSelect
               control={form.control}
               name="token_endpoint_auth_method"
               label="Auth Method"
               placeholder="Select method"
               className="w-full"
+              description="How the client authenticates at the token endpoint."
             >
               <SelectItem value="none">None</SelectItem>
               <SelectItem value="client_secret_basic">
@@ -224,6 +336,7 @@ export function OAuthClientCreateForm({
               label="Client Type"
               placeholder="Select type"
               className="w-full"
+              description="Deployment model: web server, native app, or browser SPA."
             >
               <SelectItem value="web">Web</SelectItem>
               <SelectItem value="native">Native</SelectItem>
@@ -237,11 +350,92 @@ export function OAuthClientCreateForm({
               label="Subject Type"
               placeholder="Select subject type"
               className="w-full"
+              description="How the sub claim is computed — public (same across clients) or pairwise (unique per client)."
             >
               <SelectItem value="public">Public</SelectItem>
               <SelectItem value="pairwise">Pairwise</SelectItem>
             </FormSelect>
           </FieldGroup>
+
+          {/* Grant Types */}
+          <Field>
+            <FieldLabel>Grant Types</FieldLabel>
+            <FieldDescription>
+              OAuth 2.0 grant types this client is allowed to use.
+            </FieldDescription>
+            <div className="flex flex-wrap gap-x-6 gap-y-3 pt-1">
+              {GrantType.map((type) => (
+                <label
+                  key={type}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <Checkbox
+                    checked={selectedGrantTypes.includes(type)}
+                    onCheckedChange={() => toggleGrantType(type)}
+                  />
+                  <span className="text-sm font-mono">{type}</span>
+                </label>
+              ))}
+            </div>
+          </Field>
+
+          {/* Response Types */}
+          <Field>
+            <FieldLabel>Response Types</FieldLabel>
+            <FieldDescription>
+              OAuth 2.0 response types this client may use in authorization
+              requests.
+            </FieldDescription>
+            <div className="flex flex-wrap gap-x-6 gap-y-3 pt-1">
+              {ResponseType.map((type) => (
+                <label
+                  key={type}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
+                  <Checkbox
+                    checked={selectedResponseTypes.includes(type)}
+                    onCheckedChange={() => toggleResponseType(type)}
+                  />
+                  <span className="text-sm font-mono">{type}</span>
+                </label>
+              ))}
+            </div>
+          </Field>
+        </FieldSet>
+      </FieldGroup>
+
+      {/* Software Statement */}
+      <FieldGroup>
+        <FieldSet>
+          <FieldLegend>Software Information</FieldLegend>
+          <FieldGroup className="grid sm:grid-cols-2 gap-4">
+            <FormInput
+              control={control}
+              name="software_id"
+              label="Software ID"
+              placeholder="com.example.myapp"
+              description="Unique identifier for the software package."
+              descriptionPlace="bottom"
+            />
+
+            <FormInput
+              control={control}
+              name="software_version"
+              label="Software Version"
+              placeholder="1.0.0"
+              description="Version of the software package."
+              descriptionPlace="bottom"
+            />
+          </FieldGroup>
+
+          <FormInput
+            control={control}
+            name="software_statement"
+            label="Software Statement"
+            placeholder="Signed JWT asserting client software identity"
+            description="A signed JWT containing client metadata assertions (optional)."
+            descriptionPlace="bottom"
+          />
         </FieldSet>
       </FieldGroup>
 
@@ -254,18 +448,21 @@ export function OAuthClientCreateForm({
               control={form.control}
               name="require_pkce"
               label="Require PKCE"
+              description="Enforce PKCE (Proof Key for Code Exchange) on authorization requests."
             />
 
             <FormSwitch
               control={form.control}
               name="skip_consent"
               label="Skip Consent"
+              description="Bypass the user consent screen for trusted first-party clients."
             />
 
             <FormSwitch
               control={form.control}
               name="enable_end_session"
               label="Enable Logout"
+              description="Allow this client to trigger end-session (logout) flows."
             />
           </FieldGroup>
         </FieldSet>

@@ -15,7 +15,25 @@ export type ModalType =
   | "revokeUserSessions"
   | "impersonateUser"
   | "revokeSession"
-  | "revokeAllSessions";
+  | "revokeAllSessions"
+  // Organizations
+  | "createOrganization"
+  | "editOrganization"
+  | "deleteOrganization"
+  // Members
+  | "addMember"
+  | "updateMemberRole"
+  | "removeMember"
+  // Invitations
+  | "createInvitation"
+  | "cancelInvitation"
+  // Teams
+  | "createTeam"
+  | "updateTeam"
+  | "removeTeam"
+  // Team members
+  | "addTeamMember"
+  | "removeTeamMember";
 
 export interface ModalData {
   // Users
@@ -33,6 +51,25 @@ export interface ModalData {
   sessionToken?: string;
   sessionIp?: string | null;
   sessionUserAgent?: string | null;
+  // Organizations
+  organizationId?: string;
+  organizationName?: string;
+  organizationSlug?: string;
+  organizationLogo?: string | null;
+  organizationMetadata?: string | null;
+  // Members
+  memberId?: string;
+  memberUserId?: string;
+  memberName?: string;
+  memberRole?: string;
+  // Invitations
+  invitationId?: string;
+  invitationEmail?: string;
+  // Teams
+  teamId?: string;
+  teamName?: string;
+  // Team members
+  teamMemberId?: string;
 }
 
 interface IAdminStore {

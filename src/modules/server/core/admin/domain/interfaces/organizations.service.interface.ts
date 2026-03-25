@@ -1,0 +1,41 @@
+import {
+  TListOrganizationsResponseSchema,
+  TOrganizationDetailSchema,
+  TOrganizationSummarySchema,
+  TCreateOrganizationValidationSchema,
+  TUpdateOrganizationValidationSchema,
+  TDeleteOrganizationValidationSchema,
+  TAddMemberValidationSchema,
+  TUpdateMemberRoleValidationSchema,
+  TRemoveMemberValidationSchema,
+  TCreateInvitationValidationSchema,
+  TCancelInvitationValidationSchema,
+  TCreateTeamValidationSchema,
+  TUpdateTeamValidationSchema,
+  TRemoveTeamValidationSchema,
+  TAddTeamMemberValidationSchema,
+  TRemoveTeamMemberValidationSchema,
+} from "@/modules/entities/schemas/admin/organizations/organizations.schema";
+
+export interface IOrganizationsService {
+  listOrganizations(): Promise<TListOrganizationsResponseSchema>;
+  getOrganization(organizationId: string): Promise<TOrganizationDetailSchema>;
+
+  createOrganization(payload: TCreateOrganizationValidationSchema): Promise<TOrganizationSummarySchema>;
+  updateOrganization(payload: TUpdateOrganizationValidationSchema): Promise<TOrganizationSummarySchema>;
+  deleteOrganization(payload: TDeleteOrganizationValidationSchema): Promise<{ success: boolean }>;
+
+  addMember(payload: TAddMemberValidationSchema): Promise<{ success: boolean }>;
+  updateMemberRole(payload: TUpdateMemberRoleValidationSchema): Promise<{ success: boolean }>;
+  removeMember(payload: TRemoveMemberValidationSchema): Promise<{ success: boolean }>;
+
+  createInvitation(payload: TCreateInvitationValidationSchema): Promise<{ success: boolean }>;
+  cancelInvitation(payload: TCancelInvitationValidationSchema): Promise<{ success: boolean }>;
+
+  createTeam(payload: TCreateTeamValidationSchema): Promise<{ success: boolean }>;
+  updateTeam(payload: TUpdateTeamValidationSchema): Promise<{ success: boolean }>;
+  removeTeam(payload: TRemoveTeamValidationSchema): Promise<{ success: boolean }>;
+
+  addTeamMember(payload: TAddTeamMemberValidationSchema): Promise<{ success: boolean }>;
+  removeTeamMember(payload: TRemoveTeamMemberValidationSchema): Promise<{ success: boolean }>;
+}

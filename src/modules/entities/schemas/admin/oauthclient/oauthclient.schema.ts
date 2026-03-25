@@ -50,9 +50,14 @@ export const UpdateOAuthClientFormSchema = OAuthClientIdSchema.pick({
       software_version: true,
       software_statement: true,
       post_logout_redirect_uris: true,
+      token_endpoint_auth_method: true,
       grant_types: true,
       response_types: true,
       type: true,
+      subject_type: true,
+      require_pkce: true,
+      skip_consent: true,
+      enable_end_session: true,
     }).merge(
       z.object({
         redirect_uris: z.array(z.string().url()).min(1).optional(),

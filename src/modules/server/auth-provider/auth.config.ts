@@ -56,6 +56,11 @@ export const authConfig = {
     provider: "postgresql",
   }),
 
+  rateLimit: {
+    window: 60, // time window in seconds
+    max: 100, // max requests in the window
+  },
+
   session: {
     storeSessionInDatabase: true,
 
@@ -215,6 +220,7 @@ export const authConfig = {
     organization({
       teams: {
         enabled: true,
+        allowRemovingAllTeams: true,
       },
     }),
 

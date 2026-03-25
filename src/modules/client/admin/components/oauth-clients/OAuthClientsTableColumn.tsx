@@ -66,19 +66,26 @@ export const oauthClientsTableColumn = (): ColumnDef<TOAuthClient>[] => [
     header: "Grant Types",
     accessorKey: "grant_types",
     cell({ row }) {
+      const grantTypes = row.original.grant_types;
+      if (!grantTypes || grantTypes.length === 0) return <span className="text-muted-foreground text-sm">-</span>;
       return (
-        <Badge
-          className={cn(
-            buttonVariants({
-              size: "sm",
-              variant: "default",
-              className:
-                "cursor-default h-6 rounded-lg bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary",
-            }),
-          )}
-        >
-          {row.original.grant_types?.join(", ") ?? "-"}
-        </Badge>
+        <div className="flex flex-wrap gap-1">
+          {grantTypes.map((gt) => (
+            <Badge
+              key={gt}
+              className={cn(
+                buttonVariants({
+                  size: "sm",
+                  variant: "default",
+                  className:
+                    "cursor-default h-6 rounded-lg bg-primary/15 text-primary hover:bg-primary/20 hover:text-primary font-mono text-xs",
+                }),
+              )}
+            >
+              {gt}
+            </Badge>
+          ))}
+        </div>
       );
     },
   },
