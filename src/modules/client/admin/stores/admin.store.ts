@@ -33,7 +33,10 @@ export type ModalType =
   | "removeTeam"
   // Team members
   | "addTeamMember"
-  | "removeTeamMember";
+  | "removeTeamMember"
+  // Consents
+  | "deleteConsent"
+  | "updateConsentScopes";
 
 export interface ModalData {
   // Users
@@ -70,6 +73,11 @@ export interface ModalData {
   teamName?: string;
   // Team members
   teamMemberId?: string;
+  // Consents
+  consentId?: string;
+  consentScopes?: string[];
+  consentClientId?: string;
+  consentUserId?: string | null;
 }
 
 interface IAdminStore {

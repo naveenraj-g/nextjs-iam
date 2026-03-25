@@ -68,10 +68,15 @@ export const adminSidebarData = {
           icon: "globe",
         },
         {
-          title: "Service Accounts",
-          url: "/admin/service-accounts",
-          icon: "bot",
+          title: "Consents",
+          url: "/admin/consents",
+          icon: "file-check",
         },
+        // {
+        //   title: "Service Accounts",
+        //   url: "/admin/service-accounts",
+        //   icon: "bot",
+        // },
         {
           title: "API Keys",
           url: "/admin/api-keys",
