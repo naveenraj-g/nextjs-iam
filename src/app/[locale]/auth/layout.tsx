@@ -1,9 +1,7 @@
-function AuthLayout({ children }: LayoutProps<"/auth">) {
-  return (
-    <main className="flex flex-col items-center justify-center w-full min-h-screen p-4">
-      {children}
-    </main>
-  );
+import { AuthLayout } from "@/modules/client/auth/components/layout/AuthLayout";
+
+function AuthPageLayout({ children }: LayoutProps<"/auth">) {
+  return <AuthLayout>{children}</AuthLayout>;
 }
 
-export default AuthLayout;
+export default AuthPageLayout;
