@@ -56,7 +56,15 @@ export type ModalType =
   // RBAC — Menu Nodes
   | "createMenuNode"
   | "editMenuNode"
-  | "deleteMenuNode";
+  | "deleteMenuNode"
+  // Resources
+  | "createResource"
+  | "editResource"
+  | "deleteResource"
+  // Resource Actions
+  | "createResourceAction"
+  | "editResourceAction"
+  | "deleteResourceAction";
 
 export interface ModalData {
   // Users
@@ -134,6 +142,17 @@ export interface ModalData {
   menuNodeAppId?: string;
   menuNodePermissionKeys?: string[];
   menuNodeOrder?: number;
+  // Resources
+  resourceId?: string;
+  resourceName?: string;
+  resourceDescription?: string | null;
+  // Resource Actions
+  resourceActionId?: string;
+  resourceActionName?: string;
+  resourceActionKey?: string;
+  resourceActionDescription?: string | null;
+  resourceActionResourceId?: string;
+  resourceActionResourceName?: string;
 }
 
 interface IAdminStore {

@@ -7,3 +7,4 @@ export * from "./admin/organizations.module";
 export * from "./admin/consents.module";
 export * from "./admin/agentauth.module";
 export * from "./admin/apps.module";
+export * from "./admin/resources.module";

@@ -31,6 +31,9 @@ const SEGMENT_LABELS: Record<string, string> = {
   // Apps / Navigation
   apps: "Apps",
   menus: "Menus",
+  // Resources
+  resources: "Resources",
+  "resource-actions": "Resource Actions",
 };
 
 function getLabel(segment: string): string {
