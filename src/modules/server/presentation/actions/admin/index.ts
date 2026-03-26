@@ -3,3 +3,4 @@ export * from "./users.action";
 export * from "./sessions.action";
 export * from "./organizations.action";
 export * from "./consents.action";
+export * from "./agentauth.action";

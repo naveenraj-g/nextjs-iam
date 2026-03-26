@@ -8,6 +8,7 @@ import {
   registerSessionsModule,
   registerOrganizationsModule,
   registerConsentsModule,
+  registerAgentAuthModule,
 } from "./modules";
 
 const ApplicationContainer = createContainer();
@@ -19,6 +20,7 @@ registerUsersModule(ApplicationContainer);
 registerSessionsModule(ApplicationContainer);
 registerOrganizationsModule(ApplicationContainer);
 registerConsentsModule(ApplicationContainer);
+registerAgentAuthModule(ApplicationContainer);
 
 export const getInjection = <K extends keyof typeof DI_SYMBOLS>(
   symbol: K,

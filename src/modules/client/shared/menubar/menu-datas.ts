@@ -1,15 +1,11 @@
 import {
   BriefcaseMedical,
-  Building,
   CalendarClock,
   CalendarPlus,
-  FileSliders,
   LayoutDashboard,
   Settings2,
-  ShieldUser,
   Stethoscope,
   UserCog,
-  UserRoundCog,
 } from "lucide-react";
 
 export const adminSidebarData = {
@@ -68,15 +64,15 @@ export const adminSidebarData = {
           icon: "globe",
         },
         {
+          title: "Agent Auth",
+          url: "/admin/agent-auth",
+          icon: "bot",
+        },
+        {
           title: "Consents",
           url: "/admin/consents",
           icon: "file-check",
         },
-        // {
-        //   title: "Service Accounts",
-        //   url: "/admin/service-accounts",
-        //   icon: "bot",
-        // },
         {
           title: "API Keys",
           url: "/admin/api-keys",
@@ -235,3 +231,47 @@ export const telemedicineSidebarData = {
     // },
   ],
 };
+
+/* 
+sample data
+
+{
+  title: "IDENTITY",
+  items: [
+    {
+      title: "Users",
+      icon: "users",
+      items: [
+        {
+          title: "All Users",
+          url: "/admin/users",
+        },
+        {
+          title: "User Roles",
+          url: "/admin/users/roles",
+        },
+      ],
+    },
+    {
+      title: "Organizations",
+      icon: "building-2",
+      items: [
+        {
+          title: "All Organizations",
+          url: "/admin/organizations",
+        },
+      ],
+    },
+    {
+      title: "Teams",
+      icon: "users",
+      items: [
+        {
+          title: "All Teams",
+          url: "/admin/teams",
+        },
+      ],
+    },
+  ],
+}
+*/

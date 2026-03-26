@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import {
   SignupResponseDtoSchema,
   TSignupResponseDtoSchema,
@@ -8,114 +9,136 @@ import {
   SigninWithSocialResponseDtoSchema,
   TSigninWithSocialResponseDtoSchema,
   SendEmailVerificationDtoSchema,
-  TSendEmailVerificationDtoSchema
-} from "@/modules/entities/schemas/auth"
-import { auth } from "@/modules/server/auth-provider/auth"
-import { IAuthService } from "../../domain/interfaces/auth.service.interface"
-import { mapBetterAuthError } from "@/modules/server/shared/errors/mappers/mapBetterAuthError"
-import { headers } from "next/headers"
+  TSendEmailVerificationDtoSchema,
+} from "@/modules/entities/schemas/auth";
+import { auth } from "@/modules/server/auth-provider/auth";
+import { IAuthService } from "../../domain/interfaces/auth.service.interface";
+import { mapBetterAuthError } from "@/modules/server/shared/errors/mappers/mapBetterAuthError";
+import { headers } from "next/headers";
 import {
   TSendEmailVerificationPayload,
   TSigninEmailPayload,
   TSigninWithSocialPayload,
-  TSignupEmailPayload
-} from "@/modules/entities/types/auth"
+  TSignupEmailPayload,
+} from "@/modules/entities/types/auth";
+import { logOperation } from "@/modules/server/config/logger/log-operation";
 
 export class AuthService implements IAuthService {
   async signUpWithEmail(
-    payload: TSignupEmailPayload
+    payload: TSignupEmailPayload,
   ): Promise<TSignupResponseDtoSchema> {
-    const { email, name, password } = payload
-
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", { name: "AuthService.signUpWithEmail", startTimeMs, context: { operationId, email: payload.email } });
     try {
       const res = await auth.api.signUpEmail({
         body: {
-          name,
-          email,
-          password,
-          callbackURL: "/"
-        }
-      })
-
-      return await SignupResponseDtoSchema.parseAsync(res)
+          name: payload.name,
+          email: payload.email,
+          password: payload.password,
+          callbackURL: "/",
+        },
+      });
+      const data = await SignupResponseDtoSchema.parseAsync(res);
+      logOperation("success", { name: "AuthService.signUpWithEmail", startTimeMs, data, context: { operationId, email: payload.email } });
+      return data;
     } catch (error) {
-      mapBetterAuthError(error, "Failed to sign up user")
+      logOperation("error", { name: "AuthService.signUpWithEmail", startTimeMs, err: error, context: { operationId, email: payload.email } });
+      mapBetterAuthError(error, "Failed to sign up user");
     }
   }
 
   async signInWithEmail(
-    payload: TSigninEmailPayload
+    payload: TSigninEmailPayload,
   ): Promise<TSigninResponseDtoSchema> {
-    const { email, password, rememberMe } = payload
-
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", { name: "AuthService.signInWithEmail", startTimeMs, context: { operationId, email: payload.email } });
     try {
       const res = await auth.api.signInEmail({
         body: {
-          email,
-          password,
-          rememberMe,
-          callbackURL: "/"
-        }
-      })
-
-      return await SigninResponseDtoSchema.parseAsync(res)
+          email: payload.email,
+          password: payload.password,
+          rememberMe: payload.rememberMe,
+          callbackURL: "/",
+        },
+      });
+      const data = await SigninResponseDtoSchema.parseAsync(res);
+      logOperation("success", { name: "AuthService.signInWithEmail", startTimeMs, data, context: { operationId, email: payload.email } });
+      return data;
     } catch (error) {
-      mapBetterAuthError(error, "Failed to sign in user")
+      logOperation("error", { name: "AuthService.signInWithEmail", startTimeMs, err: error, context: { operationId, email: payload.email } });
+      mapBetterAuthError(error, "Failed to sign in user");
     }
   }
 
   async signInWithSocial(
-    payload: TSigninWithSocialPayload
+    payload: TSigninWithSocialPayload,
   ): Promise<TSigninWithSocialResponseDtoSchema> {
-    const { provider } = payload
-
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", {
+      name: "AuthService.signInWithSocial",
+      startTimeMs,
+      context: { operationId, provider: payload.provider },
+    });
     try {
       const res = await auth.api.signInSocial({
-        body: {
-          provider,
-          callbackURL: "/"
-        }
-      })
-
-      return await SigninWithSocialResponseDtoSchema.parseAsync(res)
+        body: { provider: payload.provider, callbackURL: "/" },
+      });
+      const data = await SigninWithSocialResponseDtoSchema.parseAsync(res);
+      logOperation("success", {
+        name: "AuthService.signInWithSocial",
+        startTimeMs,
+        data,
+        context: { operationId, provider: payload.provider },
+      });
+      return data;
     } catch (error) {
-      mapBetterAuthError(error, "Failed to sign in user")
+      logOperation("error", {
+        name: "AuthService.signInWithSocial",
+        startTimeMs,
+        err: error,
+        context: { operationId, provider: payload.provider },
+      });
+      mapBetterAuthError(error, "Failed to sign in user");
     }
   }
 
   async signOut(): Promise<TSignoutResponseDtoSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", { name: "AuthService.signOut", startTimeMs, context: { operationId } });
     try {
-      const res = await auth.api.signOut({
-        headers: await headers()
-      })
-
-      const data = {
+      const res = await auth.api.signOut({ headers: await headers() });
+      const data = await SignoutResponseDtoSchema.parseAsync({
         ...res,
-        url: res.success ? "/" : null
-      }
-
-      return await SignoutResponseDtoSchema.parseAsync(data)
+        url: res.success ? "/" : null,
+      });
+      logOperation("success", { name: "AuthService.signOut", startTimeMs, data, context: { operationId } });
+      return data;
     } catch (error) {
-      mapBetterAuthError(error, "Failed to sign out user")
+      logOperation("error", { name: "AuthService.signOut", startTimeMs, err: error, context: { operationId } });
+      mapBetterAuthError(error, "Failed to sign out user");
     }
   }
 
   async sendEmailVerification(
-    payload: TSendEmailVerificationPayload
+    payload: TSendEmailVerificationPayload,
   ): Promise<TSendEmailVerificationDtoSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", { name: "AuthService.sendEmailVerification", startTimeMs, context: { operationId, email: payload.email } });
     try {
       const res = await auth.api.sendVerificationEmail({
-        body: {
-          email: payload.email,
-          callbackURL: "/"
-        }
-      })
-
-      return await SendEmailVerificationDtoSchema.parseAsync({
-        success: res.status
-      })
+        body: { email: payload.email, callbackURL: "/" },
+      });
+      const data = await SendEmailVerificationDtoSchema.parseAsync({ success: res.status });
+      logOperation("success", { name: "AuthService.sendEmailVerification", startTimeMs, data, context: { operationId, email: payload.email } });
+      return data;
     } catch (error) {
-      mapBetterAuthError(error, "Failed to send verification email")
+      logOperation("error", { name: "AuthService.sendEmailVerification", startTimeMs, err: error, context: { operationId, email: payload.email } });
+      mapBetterAuthError(error, "Failed to send verification email");
     }
   }
 }

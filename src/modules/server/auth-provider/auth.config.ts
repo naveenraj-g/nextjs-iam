@@ -5,7 +5,7 @@ import { APIError, type BetterAuthOptions } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { createAuthMiddleware } from "better-auth/api";
-import { getJwtToken } from "better-auth/plugins/jwt";
+// import { getJwtToken } from "better-auth/plugins/jwt";
 import { oauthProvider } from "@better-auth/oauth-provider";
 import {
   openAPI,
@@ -18,9 +18,9 @@ import {
   createAccessControl,
 } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
-import { agentAuth } from "@better-auth/agent-auth";
+// import { agentAuth } from "@better-auth/agent-auth";
 import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
-import { createFromOpenAPI } from "@better-auth/agent-auth/openapi";
+// import { createFromOpenAPI } from "@better-auth/agent-auth/openapi";
 
 // local import
 import { prisma } from "../../../../prisma/db";
@@ -50,7 +50,7 @@ const guestRole = ac.newRole({
   user: ["get"],
 });
 
-const spec = await fetch(process.env.FHIR_OPENAPI_URL!).then((r) => r.json());
+// const spec = await fetch(process.env.FHIR_OPENAPI_URL!).then((r) => r.json());
 
 export const authConfig = {
   database: prismaAdapter(prisma, {
@@ -265,18 +265,18 @@ export const authConfig = {
 
     apiKey({ defaultPrefix: "drgodly_" }),
 
-    agentAuth({
-      ...createFromOpenAPI(spec, {
-        baseUrl: process.env.FHIR_SERVER_URL!,
-        async resolveHeaders({ ctx }) {
-          const token = await getJwtToken(ctx);
+    // agentAuth({
+    //   ...createFromOpenAPI(spec, {
+    //     baseUrl: process.env.FHIR_SERVER_URL!,
+    //     async resolveHeaders({ ctx }) {
+    //       const token = await getJwtToken(ctx);
 
-          return {
-            Authorization: `Bearer ${token}`,
-          };
-        },
-      }),
-    }),
+    //       return {
+    //         Authorization: `Bearer ${token}`,
+    //       };
+    //     },
+    //   }),
+    // }),
 
     // NOTE: This plugin make sure the application knows how to set cookies in next.js, it is required for server side operations with better-auth
     nextCookies(),

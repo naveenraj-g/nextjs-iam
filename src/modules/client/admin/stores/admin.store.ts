@@ -36,7 +36,19 @@ export type ModalType =
   | "removeTeamMember"
   // Consents
   | "deleteConsent"
-  | "updateConsentScopes";
+  | "updateConsentScopes"
+  // Agent Auth — Agents
+  | "updateAgent"
+  | "revokeAgent"
+  | "reactivateAgent"
+  | "grantAgentCapability"
+  | "cleanupAgents"
+  // Agent Auth — Approvals
+  | "approveCapability"
+  // Agent Auth — Hosts
+  | "createHost"
+  | "updateHost"
+  | "revokeHost";
 
 export interface ModalData {
   // Users
@@ -78,6 +90,24 @@ export interface ModalData {
   consentScopes?: string[];
   consentClientId?: string;
   consentUserId?: string | null;
+  // Agent Auth — Agents
+  agentId?: string;
+  agentName?: string;
+  agentStatus?: string;
+  agentCapabilityGrants?: Record<string, unknown>[];
+  // Agent Auth — Approvals
+  approvalId?: string;
+  approvalAgentId?: string;
+  approvalAgentName?: string;
+  approvalCapabilities?: string[];
+  approvalBindingMessage?: string | null;
+  approvalMethod?: string;
+  // Agent Auth — Hosts
+  hostId?: string;
+  hostName?: string;
+  hostStatus?: string;
+  hostDefaultCapabilities?: string[];
+  hostJwksUrl?: string | null;
 }
 
 interface IAdminStore {

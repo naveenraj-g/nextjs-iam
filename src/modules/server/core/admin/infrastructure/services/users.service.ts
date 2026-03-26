@@ -1,6 +1,9 @@
+import { randomUUID } from "crypto";
 import { headers } from "next/headers";
 import { auth } from "@/modules/server/auth-provider/auth";
 import { IUsersService } from "../../domain/interfaces/users.service.interface";
+import { logOperation } from "@/modules/server/config/logger/log-operation";
+import { mapBetterAuthError } from "@/modules/server/shared/errors/mappers/mapBetterAuthError";
 import {
   GetUsersResponseDtoSchema,
   TGetUsersResponseDtoSchema,
@@ -15,18 +18,24 @@ import {
 
 export class UsersService implements IUsersService {
   async getUsers(): Promise<TGetUsersResponseDtoSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", { name: "UsersService.getUsers", startTimeMs, context: { operationId } });
     try {
-      const res = await auth.api.listUsers({
-        query: {},
-        headers: await headers(),
-      });
-      return await GetUsersResponseDtoSchema.parseAsync(res);
+      const res = await auth.api.listUsers({ query: {}, headers: await headers() });
+      const data = await GetUsersResponseDtoSchema.parseAsync(res);
+      logOperation("success", { name: "UsersService.getUsers", startTimeMs, data, context: { operationId } });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", { name: "UsersService.getUsers", startTimeMs, err: error, context: { operationId } });
+      mapBetterAuthError(error, "Failed to list users");
     }
   }
 
   async createUser(payload: TCreateUserValidationSchema): Promise<TUserSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", { name: "UsersService.createUser", startTimeMs, context: { operationId } });
     try {
       const res = await auth.api.createUser({
         body: {
@@ -37,37 +46,94 @@ export class UsersService implements IUsersService {
         },
         headers: await headers(),
       });
-      return await UserSchema.parseAsync(res.user);
+      const data = await UserSchema.parseAsync(res.user);
+      logOperation("success", { name: "UsersService.createUser", startTimeMs, data, context: { operationId } });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", { name: "UsersService.createUser", startTimeMs, err: error, context: { operationId } });
+      mapBetterAuthError(error, "Failed to create user");
     }
   }
 
   async updateUser(payload: TUpdateUserValidationSchema): Promise<TUserSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", {
+      name: "UsersService.updateUser",
+      startTimeMs,
+      userId: payload.userId,
+      context: { operationId },
+    });
     try {
       const res = await auth.api.adminUpdateUser({
         body: { userId: payload.userId, data: payload.data },
         headers: await headers(),
       });
-      return await UserSchema.parseAsync(res);
+      const data = await UserSchema.parseAsync(res);
+      logOperation("success", {
+        name: "UsersService.updateUser",
+        startTimeMs,
+        userId: payload.userId,
+        data,
+        context: { operationId },
+      });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", {
+        name: "UsersService.updateUser",
+        startTimeMs,
+        userId: payload.userId,
+        err: error,
+        context: { operationId },
+      });
+      mapBetterAuthError(error, "Failed to update user");
     }
   }
 
   async setUserRole(payload: TSetUserRoleValidationSchema): Promise<TUserSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", {
+      name: "UsersService.setUserRole",
+      startTimeMs,
+      userId: payload.userId,
+      context: { operationId },
+    });
     try {
       const res = await auth.api.setRole({
         body: { userId: payload.userId, role: payload.role },
         headers: await headers(),
       });
-      return await UserSchema.parseAsync(res.user);
+      const data = await UserSchema.parseAsync(res.user);
+      logOperation("success", {
+        name: "UsersService.setUserRole",
+        startTimeMs,
+        userId: payload.userId,
+        data,
+        context: { operationId },
+      });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", {
+        name: "UsersService.setUserRole",
+        startTimeMs,
+        userId: payload.userId,
+        err: error,
+        context: { operationId },
+      });
+      mapBetterAuthError(error, "Failed to set user role");
     }
   }
 
   async banUser(payload: TBanUserValidationSchema): Promise<TUserSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", {
+      name: "UsersService.banUser",
+      startTimeMs,
+      userId: payload.userId,
+      context: { operationId },
+    });
     try {
       const res = await auth.api.banUser({
         body: {
@@ -77,70 +143,204 @@ export class UsersService implements IUsersService {
         },
         headers: await headers(),
       });
-      return await UserSchema.parseAsync(res.user);
+      const data = await UserSchema.parseAsync(res.user);
+      logOperation("success", {
+        name: "UsersService.banUser",
+        startTimeMs,
+        userId: payload.userId,
+        data,
+        context: { operationId },
+      });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", {
+        name: "UsersService.banUser",
+        startTimeMs,
+        userId: payload.userId,
+        err: error,
+        context: { operationId },
+      });
+      mapBetterAuthError(error, "Failed to ban user");
     }
   }
 
   async unbanUser(payload: { userId: string }): Promise<TUserSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", {
+      name: "UsersService.unbanUser",
+      startTimeMs,
+      userId: payload.userId,
+      context: { operationId },
+    });
     try {
       const res = await auth.api.unbanUser({
         body: { userId: payload.userId },
         headers: await headers(),
       });
-      return await UserSchema.parseAsync(res.user);
+      const data = await UserSchema.parseAsync(res.user);
+      logOperation("success", {
+        name: "UsersService.unbanUser",
+        startTimeMs,
+        userId: payload.userId,
+        data,
+        context: { operationId },
+      });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", {
+        name: "UsersService.unbanUser",
+        startTimeMs,
+        userId: payload.userId,
+        err: error,
+        context: { operationId },
+      });
+      mapBetterAuthError(error, "Failed to unban user");
     }
   }
 
   async removeUser(payload: { userId: string }): Promise<{ success: boolean }> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", {
+      name: "UsersService.removeUser",
+      startTimeMs,
+      userId: payload.userId,
+      context: { operationId },
+    });
     try {
       const res = await auth.api.removeUser({
         body: { userId: payload.userId },
         headers: await headers(),
       });
-      return { success: res.success };
+      const data = { success: res.success };
+      logOperation("success", {
+        name: "UsersService.removeUser",
+        startTimeMs,
+        userId: payload.userId,
+        data,
+        context: { operationId },
+      });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", {
+        name: "UsersService.removeUser",
+        startTimeMs,
+        userId: payload.userId,
+        err: error,
+        context: { operationId },
+      });
+      mapBetterAuthError(error, "Failed to remove user");
     }
   }
 
-  async setUserPassword(payload: TSetUserPasswordValidationSchema): Promise<{ status: boolean }> {
+  async setUserPassword(
+    payload: TSetUserPasswordValidationSchema,
+  ): Promise<{ status: boolean }> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", {
+      name: "UsersService.setUserPassword",
+      startTimeMs,
+      userId: payload.userId,
+      context: { operationId },
+    });
     try {
       const res = await auth.api.setUserPassword({
         body: { userId: payload.userId, newPassword: payload.newPassword },
         headers: await headers(),
       });
-      return { status: res.status };
+      const data = { status: res.status };
+      logOperation("success", {
+        name: "UsersService.setUserPassword",
+        startTimeMs,
+        userId: payload.userId,
+        data,
+        context: { operationId },
+      });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", {
+        name: "UsersService.setUserPassword",
+        startTimeMs,
+        userId: payload.userId,
+        err: error,
+        context: { operationId },
+      });
+      mapBetterAuthError(error, "Failed to set user password");
     }
   }
 
   async revokeUserSessions(payload: { userId: string }): Promise<{ success: boolean }> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", {
+      name: "UsersService.revokeUserSessions",
+      startTimeMs,
+      userId: payload.userId,
+      context: { operationId },
+    });
     try {
       const res = await auth.api.revokeUserSessions({
         body: { userId: payload.userId },
         headers: await headers(),
       });
-      return { success: res.success };
+      const data = { success: res.success };
+      logOperation("success", {
+        name: "UsersService.revokeUserSessions",
+        startTimeMs,
+        userId: payload.userId,
+        data,
+        context: { operationId },
+      });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", {
+        name: "UsersService.revokeUserSessions",
+        startTimeMs,
+        userId: payload.userId,
+        err: error,
+        context: { operationId },
+      });
+      mapBetterAuthError(error, "Failed to revoke user sessions");
     }
   }
 
-  async impersonateUser(payload: { userId: string }): Promise<{ session: unknown; user: TUserSchema }> {
+  async impersonateUser(payload: {
+    userId: string;
+  }): Promise<{ session: unknown; user: TUserSchema }> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+    logOperation("start", {
+      name: "UsersService.impersonateUser",
+      startTimeMs,
+      userId: payload.userId,
+      context: { operationId },
+    });
     try {
       const res = await auth.api.impersonateUser({
         body: { userId: payload.userId },
         headers: await headers(),
       });
       const user = await UserSchema.parseAsync(res.user);
-      return { session: res.session, user };
+      const data = { session: res.session, user };
+      logOperation("success", {
+        name: "UsersService.impersonateUser",
+        startTimeMs,
+        userId: payload.userId,
+        data,
+        context: { operationId },
+      });
+      return data;
     } catch (error) {
-      throw error;
+      logOperation("error", {
+        name: "UsersService.impersonateUser",
+        startTimeMs,
+        userId: payload.userId,
+        err: error,
+        context: { operationId },
+      });
+      mapBetterAuthError(error, "Failed to impersonate user");
     }
   }
 }

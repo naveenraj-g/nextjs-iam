@@ -42,6 +42,10 @@ model User {
 
   teammembers TeamMember[]
 
+  // RBAC relations
+  userRoles            UserRole[]
+  userPermissionCaches UserPermissionCache[]
+
   @@unique([email])
   @@map("user")
   @@unique([username])
@@ -135,6 +139,11 @@ model Organization {
   invitations Invitation[]
 
   teams Team[]
+
+  // RBAC relations
+  roles                Role[]
+  userRoles            UserRole[]
+  userPermissionCaches UserPermissionCache[]
 
   @@unique([slug])
   @@map("organization")
@@ -428,4 +437,269 @@ model TeamMember {
   @@index([teamId])
   @@index([userId])
   @@map("teamMember")
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+
+// Custom Schemas for RBAC
+
+// ------------------------------------------------------------------ //
+// Enums
+// ------------------------------------------------------------------ //
+
+enum PermissionEffect {
+  ALLOW
+  DENY
+}
+
+enum MenuNodeType {
+  GROUP
+  ITEM
+}
+
+// ------------------------------------------------------------------ //
+// App — represents a module / application (e.g. "telemedicine", "admin")
+// ------------------------------------------------------------------ //
+
+model App {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  deletedAt   DateTime?
+  createdBy   String?
+  updatedBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  permissions     Permission[]
+  menus           AppMenuNode[]
+  actions         AppAction[]
+  rolePermissions RolePermission[]
+
+  @@index([slug])
+  @@index([deletedAt])
+  @@map("app")
+}
+
+// ------------------------------------------------------------------ //
+// Role — org-scoped, supports hierarchy via parentId
+// null organizationId = system/global role template
+// ------------------------------------------------------------------ //
+
+model Role {
+  id             String        @id @default(cuid())
+  name           String
+  slug           String
+  description    String?
+  organizationId String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parentId       String?
+  parent         Role?         @relation("RoleHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children       Role[]        @relation("RoleHierarchy")
+  deletedAt      DateTime?
+  createdBy      String?
+  updatedBy      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@unique([organizationId, slug])
+  @@index([organizationId])
+  @@index([parentId])
+  @@index([deletedAt])
+  @@map("role")
+}
+
+// ------------------------------------------------------------------ //
+// UserRole — user can hold multiple roles per organization
+// ------------------------------------------------------------------ //
+
+model UserRole {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  roleId         String
+  role           Role         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedBy     String?      // userId of the admin who granted this role
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, organizationId, roleId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([roleId])
+  @@map("userRole")
+}
+
+// ------------------------------------------------------------------ //
+// Permission — atomic capability unit
+// name is globally unique: "<resource>.<action>" e.g. "patient.read"
+// appId is optional: null = cross-app, set = scoped to one app
+// ------------------------------------------------------------------ //
+
+model Permission {
+  id          String    @id @default(cuid())
+  name        String    @unique  // e.g. "patient.read"
+  resource    String             // e.g. "patient"
+  action      String             // e.g. "read" | "create" | "update" | "delete"
+  description String?
+  appId       String?
+  app         App?      @relation(fields: [appId], references: [id], onDelete: SetNull)
+  deletedAt   DateTime?
+  createdBy   String?
+  updatedBy   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  rolePermissions   RolePermission[]
+  menuPermissions   MenuPermission[]
+  actionPermissions ActionPermission[]
+
+  @@index([resource])
+  @@index([appId])
+  @@index([resource, action])
+  @@index([deletedAt])
+  @@map("permission")
+}
+
+// ------------------------------------------------------------------ //
+// RolePermission — ALLOW / DENY mapping with optional app scope
+// appId = null  → effect applies across all apps
+// appId = <id>  → effect applies only when evaluating for that app
+// No unique constraint (intentional): allows a role to have both a
+// global ALLOW and an app-specific DENY for the same permission.
+// Resolution engine: DENY always wins over ALLOW.
+// ------------------------------------------------------------------ //
+
+model RolePermission {
+  id           String           @id @default(cuid())
+  roleId       String
+  role         Role             @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission       @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  effect       PermissionEffect @default(ALLOW)
+  appId        String?
+  app          App?             @relation(fields: [appId], references: [id], onDelete: SetNull)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([roleId])
+  @@index([permissionId])
+  @@index([roleId, permissionId])
+  @@index([appId])
+  @@map("rolePermission")
+}
+
+// ------------------------------------------------------------------ //
+// AppMenuNode — hierarchical menu tree per app
+// ------------------------------------------------------------------ //
+
+model AppMenuNode {
+  id        String        @id @default(cuid())
+  appId     String
+  app       App           @relation(fields: [appId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    AppMenuNode?  @relation("MenuTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children  AppMenuNode[] @relation("MenuTree")
+  label     String
+  slug      String
+  icon      String?
+  href      String?
+  order     Int           @default(0)
+  type      MenuNodeType  @default(ITEM)
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  menuPermissions MenuPermission[]
+
+  @@unique([appId, slug])
+  @@index([appId])
+  @@index([parentId])
+  @@map("appMenuNode")
+}
+
+// ------------------------------------------------------------------ //
+// MenuPermission — which permission(s) gate a menu node
+// A node is visible if the user has ANY of its required permissions.
+// ------------------------------------------------------------------ //
+
+model MenuPermission {
+  id           String      @id @default(cuid())
+  menuNodeId   String
+  menuNode     AppMenuNode @relation(fields: [menuNodeId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([menuNodeId, permissionId])
+  @@index([menuNodeId])
+  @@index([permissionId])
+  @@map("menuPermission")
+}
+
+// ------------------------------------------------------------------ //
+// AppAction — a named operation (UI button or API call) per app
+// ------------------------------------------------------------------ //
+
+model AppAction {
+  id          String   @id @default(cuid())
+  appId       String
+  app         App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  name        String   // e.g. "create_patient"
+  label       String   // e.g. "Create Patient"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  actionPermissions ActionPermission[]
+
+  @@unique([appId, name])
+  @@index([appId])
+  @@map("appAction")
+}
+
+// ------------------------------------------------------------------ //
+// ActionPermission — which permission(s) gate an action
+// ------------------------------------------------------------------ //
+
+model ActionPermission {
+  id           String     @id @default(cuid())
+  actionId     String
+  action       AppAction  @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([actionId, permissionId])
+  @@index([actionId])
+  @@index([permissionId])
+  @@map("actionPermission")
+}
+
+// ------------------------------------------------------------------ //
+// UserPermissionCache — denormalized resolved permission set
+// Keyed by (userId, organizationId, appId).
+// appId = null → cached for all apps combined.
+// The service must invalidate this whenever roles or rolePermissions change.
+// ------------------------------------------------------------------ //
+
+model UserPermissionCache {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  appId          String?
+  permissions    Json         // { allow: string[], deny: string[] }
+  computedAt     DateTime     @default(now())
+  expiresAt      DateTime
+
+  @@index([userId, organizationId, appId])
+  @@index([expiresAt])
+  @@map("userPermissionCache")
 }

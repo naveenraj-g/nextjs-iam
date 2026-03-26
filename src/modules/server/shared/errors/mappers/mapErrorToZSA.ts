@@ -22,8 +22,6 @@ export function mapErrorToZSA(error: unknown): never {
   if (isNextJsControlError(error)) {
     throw error;
   }
-  console.log(error);
-
   /**
    * IMPORTANT:
    * The Server Action is the serialization boundary.
