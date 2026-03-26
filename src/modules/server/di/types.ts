@@ -4,6 +4,7 @@ import { ISessionsService } from "../core/admin/domain/interfaces/sessions.servi
 import { IOrganizationsService } from "../core/admin/domain/interfaces/organizations.service.interface";
 import { IConsentsService } from "../core/admin/domain/interfaces/consents.service.interface";
 import { IAgentAuthService } from "../core/admin/domain/interfaces/agentauth.service.interface";
+import { IAppsService } from "../core/admin/domain/interfaces/apps.service.interface";
 import { IAuthService } from "../core/auth/domain/interfaces/auth.service.interface";
 import { IEmailService } from "../core/common/email/domain/interfaces/email.service.interface";
 
@@ -19,6 +20,7 @@ export const DI_SYMBOLS = {
   IOrganizationsService: Symbol.for("IOrganizationsService"),
   IConsentsService: Symbol.for("IConsentsService"),
   IAgentAuthService: Symbol.for("IAgentAuthService"),
+  IAppsService: Symbol.for("IAppsService"),
 };
 
 export interface DI_RETURN_TYPES {
@@ -33,4 +35,5 @@ export interface DI_RETURN_TYPES {
   IOrganizationsService: IOrganizationsService;
   IConsentsService: IConsentsService;
   IAgentAuthService: IAgentAuthService;
+  IAppsService: IAppsService;
 }

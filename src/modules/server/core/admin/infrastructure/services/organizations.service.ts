@@ -1,7 +1,10 @@
 import { randomUUID } from "crypto";
+import { headers } from "next/headers";
+import { auth } from "@/modules/server/auth-provider/auth";
 import { prisma } from "../../../../../../../prisma/db";
 import { IOrganizationsService } from "../../domain/interfaces/organizations.service.interface";
 import { logOperation } from "@/modules/server/config/logger/log-operation";
+import { mapBetterAuthError } from "@/modules/server/shared/errors/mappers/mapBetterAuthError";
 import { InfrastructureError } from "@/modules/server/shared/errors/infrastructureError";
 import {
   ListOrganizationsResponseSchema,
@@ -24,13 +27,20 @@ import {
   TAddTeamMemberValidationSchema,
   TRemoveTeamMemberValidationSchema,
 } from "@/modules/entities/schemas/admin/organizations/organizations.schema";
+import { parseMetadata } from "@/modules/server/utils/helper";
 
 export class OrganizationsService implements IOrganizationsService {
   async listOrganizations(): Promise<TListOrganizationsResponseSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
-    logOperation("start", { name: "OrganizationsService.listOrganizations", startTimeMs, context: { operationId } });
+    logOperation("start", {
+      name: "OrganizationsService.listOrganizations",
+      startTimeMs,
+      context: { operationId },
+    });
     try {
+      // BetterAuth's listOrganizations does not return member/team counts.
+      // We use Prisma here to fetch the admin-view data with aggregated counts.
       const orgs = await prisma.organization.findMany({
         include: { _count: { select: { members: true, teams: true } } },
         orderBy: { createdAt: "desc" },
@@ -45,16 +55,30 @@ export class OrganizationsService implements IOrganizationsService {
         memberCount: org._count.members,
         teamCount: org._count.teams,
       }));
-      const data = await ListOrganizationsResponseSchema.parseAsync({ organizations });
-      logOperation("success", { name: "OrganizationsService.listOrganizations", startTimeMs, data, context: { operationId } });
+      const data = await ListOrganizationsResponseSchema.parseAsync({
+        organizations,
+      });
+      logOperation("success", {
+        name: "OrganizationsService.listOrganizations",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
       return data;
     } catch (error) {
-      logOperation("error", { name: "OrganizationsService.listOrganizations", startTimeMs, err: error, context: { operationId } });
+      logOperation("error", {
+        name: "OrganizationsService.listOrganizations",
+        startTimeMs,
+        err: error,
+        context: { operationId },
+      });
       throw new InfrastructureError("Failed to list organizations", error);
     }
   }
 
-  async getOrganization(organizationId: string): Promise<TOrganizationDetailSchema> {
+  async getOrganization(
+    organizationId: string,
+  ): Promise<TOrganizationDetailSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
     logOperation("start", {
@@ -63,34 +87,124 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, organizationId },
     });
     try {
-      const org = await prisma.organization.findUniqueOrThrow({
-        where: { id: organizationId },
-        include: {
-          members: {
-            include: {
-              user: { select: { id: true, name: true, email: true, image: true } },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          invitations: {
-            include: {
-              user: { select: { name: true, email: true } },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          teams: {
-            include: {
-              teammembers: {
-                include: {
-                  user: { select: { id: true, name: true, email: true, image: true } },
+      const res = await auth.api.getFullOrganization({
+        query: { organizationId },
+        headers: await headers(),
+      });
+
+      if (!res) throw new InfrastructureError("Organization not found", null);
+
+      // BetterAuth returns teams without teammembers, and invitations without inviter user data.
+      // Fetch both in parallel from Prisma.
+      const inviterIds = [
+        ...new Set((res.invitations ?? []).map((inv) => inv.inviterId)),
+      ];
+      const teamIds = (res.teams ?? []).map((t) => t.id);
+
+      const [inviterUsers, allTeamMembers] = await Promise.all([
+        inviterIds.length > 0
+          ? prisma.user.findMany({
+              where: { id: { in: inviterIds } },
+              select: { id: true, name: true, email: true },
+            })
+          : Promise.resolve([]),
+        teamIds.length > 0
+          ? prisma.teamMember.findMany({
+              where: { teamId: { in: teamIds } },
+              include: {
+                user: {
+                  select: { id: true, name: true, email: true, image: true },
                 },
               },
-            },
-            orderBy: { createdAt: "desc" },
+              orderBy: { createdAt: "asc" },
+            })
+          : Promise.resolve(
+              [] as {
+                id: string;
+                teamId: string;
+                userId: string;
+                createdAt: Date | null;
+                user: {
+                  id: string;
+                  name: string;
+                  email: string;
+                  image: string | null;
+                };
+              }[],
+            ),
+      ]);
+
+      const inviterMap = new Map(inviterUsers.map((u) => [u.id, u]));
+      const teamMembersMap = new Map<string, typeof allTeamMembers>();
+      for (const tm of allTeamMembers) {
+        if (!teamMembersMap.has(tm.teamId)) teamMembersMap.set(tm.teamId, []);
+        teamMembersMap.get(tm.teamId)!.push(tm);
+      }
+
+      const teamsWithMembers = (res.teams ?? []).map((team) => ({
+        id: team.id,
+        name: team.name,
+        organizationId: team.organizationId,
+        createdAt: team.createdAt,
+        updatedAt: team.updatedAt ?? null,
+        teammembers: (teamMembersMap.get(team.id) ?? []).map((tm) => ({
+          id: tm.id,
+          teamId: tm.teamId,
+          userId: tm.userId,
+          createdAt: tm.createdAt ?? new Date(),
+          user: {
+            id: tm.user.id,
+            name: tm.user.name,
+            email: tm.user.email,
+            image: tm.user.image ?? null,
           },
-        },
-      });
-      const data = await OrganizationDetailSchema.parseAsync(org);
+        })),
+      }));
+
+      const rawData = {
+        id: res.id,
+        name: res.name,
+        slug: res.slug,
+        logo: res.logo ?? null,
+        createdAt: res.createdAt,
+        metadata:
+          typeof res.metadata === "object" && res.metadata !== null
+            ? JSON.stringify(res.metadata)
+            : ((res.metadata as string | undefined | null) ?? null),
+        members: (res.members ?? []).map((m) => ({
+          id: m.id,
+          organizationId: m.organizationId,
+          userId: m.userId,
+          role: m.role,
+          createdAt: m.createdAt,
+          user: {
+            id: m.user.id,
+            name: m.user.name,
+            email: m.user.email,
+            image: m.user.image ?? null,
+          },
+        })),
+        invitations: (res.invitations ?? []).map((inv) => ({
+          id: inv.id,
+          organizationId: inv.organizationId,
+          email: inv.email,
+          role: Array.isArray(inv.role)
+            ? (inv.role[0] ?? null)
+            : (inv.role ?? null),
+          status: inv.status,
+          expiresAt: inv.expiresAt,
+          createdAt: inv.createdAt,
+          inviterId: inv.inviterId,
+          teamId: inv.teamId ?? null,
+          user: {
+            name: inviterMap.get(inv.inviterId)?.name ?? "",
+            email: inviterMap.get(inv.inviterId)?.email ?? "",
+          },
+        })),
+        teams: teamsWithMembers,
+      };
+
+      const data = await OrganizationDetailSchema.parseAsync(rawData);
       logOperation("success", {
         name: "OrganizationsService.getOrganization",
         startTimeMs,
@@ -105,7 +219,8 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, organizationId },
       });
-      throw new InfrastructureError("Failed to get organization", error);
+      if (error instanceof InfrastructureError) throw error;
+      mapBetterAuthError(error, "Failed to get organization");
     }
   }
 
@@ -114,24 +229,55 @@ export class OrganizationsService implements IOrganizationsService {
   ): Promise<TOrganizationSummarySchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
-    logOperation("start", { name: "OrganizationsService.createOrganization", startTimeMs, context: { operationId } });
+
+    logOperation("start", {
+      name: "OrganizationsService.createOrganization",
+      startTimeMs,
+      context: { operationId },
+    });
+
     try {
-      const org = await prisma.organization.create({
-        data: {
-          id: crypto.randomUUID(),
+      const res = await auth.api.createOrganization({
+        body: {
           name: payload.name,
           slug: payload.slug,
-          logo: payload.logo || null,
-          metadata: payload.metadata || null,
-          createdAt: new Date(),
+          logo: payload.logo || undefined,
+          metadata: parseMetadata(payload.metadata),
         },
+        headers: await headers(),
       });
-      const data = await OrganizationSummarySchema.parseAsync({ ...org, memberCount: 0, teamCount: 0 });
-      logOperation("success", { name: "OrganizationsService.createOrganization", startTimeMs, data, context: { operationId } });
+
+      const data = await OrganizationSummarySchema.parseAsync({
+        id: res.id,
+        name: res.name,
+        slug: res.slug,
+        logo: res.logo ?? null,
+        createdAt: res.createdAt,
+        metadata:
+          typeof res.metadata === "object" && res.metadata !== null
+            ? JSON.stringify(res.metadata)
+            : ((res.metadata as string | undefined | null) ?? null),
+        memberCount: res.members?.length ?? 0,
+        teamCount: 0,
+      });
+
+      logOperation("success", {
+        name: "OrganizationsService.createOrganization",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
+
       return data;
     } catch (error) {
-      logOperation("error", { name: "OrganizationsService.createOrganization", startTimeMs, err: error, context: { operationId } });
-      throw new InfrastructureError("Failed to create organization", error);
+      logOperation("error", {
+        name: "OrganizationsService.createOrganization",
+        startTimeMs,
+        err: error,
+        context: { operationId },
+      });
+
+      mapBetterAuthError(error, "Failed to create organization");
     }
   }
 
@@ -146,21 +292,47 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, organizationId: payload.organizationId },
     });
     try {
-      const { organizationId, ...updateData } = payload;
-      const org = await prisma.organization.update({
-        where: { id: organizationId },
-        data: {
-          ...(updateData.name && { name: updateData.name }),
-          ...(updateData.slug && { slug: updateData.slug }),
-          ...(updateData.logo !== undefined && { logo: updateData.logo || null }),
-          ...(updateData.metadata !== undefined && { metadata: updateData.metadata || null }),
+      const res = await auth.api.updateOrganization({
+        body: {
+          organizationId: payload.organizationId,
+          data: {
+            ...(payload.name && { name: payload.name }),
+            ...(payload.slug && { slug: payload.slug }),
+            ...(payload.logo !== undefined && {
+              logo: payload.logo || undefined,
+            }),
+            ...(payload.metadata !== undefined && {
+              metadata: parseMetadata(payload.metadata),
+            }),
+          },
         },
+        headers: await headers(),
+      });
+
+      if (!res)
+        throw new InfrastructureError(
+          "Organization not found after update",
+          null,
+        );
+
+      // Fetch counts since the update response doesn't include them
+      const counts = await prisma.organization.findUnique({
+        where: { id: payload.organizationId },
         include: { _count: { select: { members: true, teams: true } } },
       });
+
       const data = await OrganizationSummarySchema.parseAsync({
-        ...org,
-        memberCount: org._count.members,
-        teamCount: org._count.teams,
+        id: res.id,
+        name: res.name,
+        slug: res.slug,
+        logo: res.logo ?? null,
+        createdAt: res.createdAt,
+        metadata:
+          typeof res.metadata === "object" && res.metadata !== null
+            ? JSON.stringify(res.metadata)
+            : ((res.metadata as string | undefined | null) ?? null),
+        memberCount: counts?._count.members ?? 0,
+        teamCount: counts?._count.teams ?? 0,
       });
       logOperation("success", {
         name: "OrganizationsService.updateOrganization",
@@ -176,7 +348,8 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, organizationId: payload.organizationId },
       });
-      throw new InfrastructureError("Failed to update organization", error);
+      if (error instanceof InfrastructureError) throw error;
+      mapBetterAuthError(error, "Failed to update organization");
     }
   }
 
@@ -191,7 +364,10 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, organizationId: payload.organizationId },
     });
     try {
-      await prisma.organization.delete({ where: { id: payload.organizationId } });
+      await auth.api.deleteOrganization({
+        body: { organizationId: payload.organizationId },
+        headers: await headers(),
+      });
       const data = { success: true };
       logOperation("success", {
         name: "OrganizationsService.deleteOrganization",
@@ -207,11 +383,13 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, organizationId: payload.organizationId },
       });
-      throw new InfrastructureError("Failed to delete organization", error);
+      mapBetterAuthError(error, "Failed to delete organization");
     }
   }
 
-  async addMember(payload: TAddMemberValidationSchema): Promise<{ success: boolean }> {
+  async addMember(
+    payload: TAddMemberValidationSchema,
+  ): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
     logOperation("start", {
@@ -221,14 +399,13 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, organizationId: payload.organizationId },
     });
     try {
-      await prisma.member.create({
-        data: {
-          id: crypto.randomUUID(),
-          organizationId: payload.organizationId,
+      await auth.api.addMember({
+        body: {
           userId: payload.userId,
-          role: payload.role,
-          createdAt: new Date(),
+          organizationId: payload.organizationId,
+          role: [payload.role],
         },
+        headers: await headers(),
       });
       const data = { success: true };
       logOperation("success", {
@@ -247,7 +424,7 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, organizationId: payload.organizationId },
       });
-      throw new InfrastructureError("Failed to add member", error);
+      mapBetterAuthError(error, "Failed to add member");
     }
   }
 
@@ -262,7 +439,14 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, memberId: payload.memberId },
     });
     try {
-      await prisma.member.update({ where: { id: payload.memberId }, data: { role: payload.role } });
+      await auth.api.updateMemberRole({
+        body: {
+          memberId: payload.memberId,
+          organizationId: payload.organizationId,
+          role: [payload.role],
+        },
+        headers: await headers(),
+      });
       const data = { success: true };
       logOperation("success", {
         name: "OrganizationsService.updateMemberRole",
@@ -278,11 +462,13 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, memberId: payload.memberId },
       });
-      throw new InfrastructureError("Failed to update member role", error);
+      mapBetterAuthError(error, "Failed to update member role");
     }
   }
 
-  async removeMember(payload: TRemoveMemberValidationSchema): Promise<{ success: boolean }> {
+  async removeMember(
+    payload: TRemoveMemberValidationSchema,
+  ): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
     logOperation("start", {
@@ -291,7 +477,13 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, memberId: payload.memberId },
     });
     try {
-      await prisma.member.delete({ where: { id: payload.memberId } });
+      await auth.api.removeMember({
+        body: {
+          memberIdOrEmail: payload.memberId,
+          organizationId: payload.organizationId,
+        },
+        headers: await headers(),
+      });
       const data = { success: true };
       logOperation("success", {
         name: "OrganizationsService.removeMember",
@@ -307,7 +499,7 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, memberId: payload.memberId },
       });
-      throw new InfrastructureError("Failed to remove member", error);
+      mapBetterAuthError(error, "Failed to remove member");
     }
   }
 
@@ -322,24 +514,14 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, organizationId: payload.organizationId },
     });
     try {
-      // Find or get a superadmin to use as inviter (admin-initiated invitation)
-      const superadmin = await prisma.user.findFirst({ where: { role: "superadmin" } });
-      if (!superadmin) throw new Error("No superadmin found to act as inviter");
-
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // 7 day expiry
-
-      await prisma.invitation.create({
-        data: {
-          id: crypto.randomUUID(),
-          organizationId: payload.organizationId,
+      await auth.api.createInvitation({
+        body: {
           email: payload.email,
-          role: payload.role,
-          status: "pending",
-          expiresAt,
-          inviterId: superadmin.id,
+          organizationId: payload.organizationId,
+          role: [payload.role],
           ...(payload.teamId && { teamId: payload.teamId }),
         },
+        headers: await headers(),
       });
       const data = { success: true };
       logOperation("success", {
@@ -356,7 +538,7 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, organizationId: payload.organizationId },
       });
-      throw new InfrastructureError("Failed to create invitation", error);
+      mapBetterAuthError(error, "Failed to create invitation");
     }
   }
 
@@ -371,7 +553,10 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, invitationId: payload.invitationId },
     });
     try {
-      await prisma.invitation.delete({ where: { id: payload.invitationId } });
+      await auth.api.cancelInvitation({
+        body: { invitationId: payload.invitationId },
+        headers: await headers(),
+      });
       const data = { success: true };
       logOperation("success", {
         name: "OrganizationsService.cancelInvitation",
@@ -387,11 +572,13 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, invitationId: payload.invitationId },
       });
-      throw new InfrastructureError("Failed to cancel invitation", error);
+      mapBetterAuthError(error, "Failed to cancel invitation");
     }
   }
 
-  async createTeam(payload: TCreateTeamValidationSchema): Promise<{ success: boolean }> {
+  async createTeam(
+    payload: TCreateTeamValidationSchema,
+  ): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
     logOperation("start", {
@@ -400,14 +587,12 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, organizationId: payload.organizationId },
     });
     try {
-      await prisma.team.create({
-        data: {
-          id: crypto.randomUUID(),
+      await auth.api.createTeam({
+        body: {
           name: payload.name,
           organizationId: payload.organizationId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
         },
+        headers: await headers(),
       });
       const data = { success: true };
       logOperation("success", {
@@ -424,11 +609,13 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, organizationId: payload.organizationId },
       });
-      throw new InfrastructureError("Failed to create team", error);
+      mapBetterAuthError(error, "Failed to create team");
     }
   }
 
-  async updateTeam(payload: TUpdateTeamValidationSchema): Promise<{ success: boolean }> {
+  async updateTeam(
+    payload: TUpdateTeamValidationSchema,
+  ): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
     logOperation("start", {
@@ -437,9 +624,12 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, teamId: payload.teamId },
     });
     try {
-      await prisma.team.update({
-        where: { id: payload.teamId },
-        data: { name: payload.name, updatedAt: new Date() },
+      await auth.api.updateTeam({
+        body: {
+          teamId: payload.teamId,
+          data: { name: payload.name },
+        },
+        headers: await headers(),
       });
       const data = { success: true };
       logOperation("success", {
@@ -456,11 +646,13 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, teamId: payload.teamId },
       });
-      throw new InfrastructureError("Failed to update team", error);
+      mapBetterAuthError(error, "Failed to update team");
     }
   }
 
-  async removeTeam(payload: TRemoveTeamValidationSchema): Promise<{ success: boolean }> {
+  async removeTeam(
+    payload: TRemoveTeamValidationSchema,
+  ): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
     logOperation("start", {
@@ -469,7 +661,13 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, teamId: payload.teamId },
     });
     try {
-      await prisma.team.delete({ where: { id: payload.teamId } });
+      await auth.api.removeTeam({
+        body: {
+          teamId: payload.teamId,
+          organizationId: payload.organizationId,
+        },
+        headers: await headers(),
+      });
       const data = { success: true };
       logOperation("success", {
         name: "OrganizationsService.removeTeam",
@@ -485,11 +683,13 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, teamId: payload.teamId },
       });
-      throw new InfrastructureError("Failed to remove team", error);
+      mapBetterAuthError(error, "Failed to remove team");
     }
   }
 
-  async addTeamMember(payload: TAddTeamMemberValidationSchema): Promise<{ success: boolean }> {
+  async addTeamMember(
+    payload: TAddTeamMemberValidationSchema,
+  ): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
     logOperation("start", {
@@ -499,13 +699,13 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, teamId: payload.teamId },
     });
     try {
-      await prisma.teamMember.create({
-        data: {
-          id: crypto.randomUUID(),
+      await auth.api.addTeamMember({
+        body: {
           teamId: payload.teamId,
           userId: payload.userId,
-          createdAt: new Date(),
+          organizationId: payload.organizationId,
         },
+        headers: await headers(),
       });
       const data = { success: true };
       logOperation("success", {
@@ -524,7 +724,7 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, teamId: payload.teamId },
       });
-      throw new InfrastructureError("Failed to add team member", error);
+      mapBetterAuthError(error, "Failed to add team member");
     }
   }
 
@@ -539,7 +739,22 @@ export class OrganizationsService implements IOrganizationsService {
       context: { operationId, teamMemberId: payload.teamMemberId },
     });
     try {
-      await prisma.teamMember.delete({ where: { id: payload.teamMemberId } });
+      // BetterAuth's removeTeamMember requires teamId + userId.
+      // Look up the team member record to get those values.
+      const teamMember = await prisma.teamMember.findUnique({
+        where: { id: payload.teamMemberId },
+      });
+      if (!teamMember)
+        throw new InfrastructureError("Team member not found", null);
+
+      await auth.api.removeTeamMember({
+        body: {
+          teamId: teamMember.teamId,
+          userId: teamMember.userId,
+          organizationId: payload.organizationId,
+        },
+        headers: await headers(),
+      });
       const data = { success: true };
       logOperation("success", {
         name: "OrganizationsService.removeTeamMember",
@@ -555,7 +770,8 @@ export class OrganizationsService implements IOrganizationsService {
         err: error,
         context: { operationId, teamMemberId: payload.teamMemberId },
       });
-      throw new InfrastructureError("Failed to remove team member", error);
+      if (error instanceof InfrastructureError) throw error;
+      mapBetterAuthError(error, "Failed to remove team member");
     }
   }
 }

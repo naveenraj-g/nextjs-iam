@@ -21,7 +21,12 @@ export function OrgCreateForm({ onSubmit, onCancel }: OrgCreateFormProps) {
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <FormInput control={control} name="name" label="Organization Name" placeholder="Acme Inc." />
+      <FormInput
+        control={control}
+        name="name"
+        label="Organization Name"
+        placeholder="Acme Inc."
+      />
       <FormInput
         control={control}
         name="slug"
@@ -36,7 +41,13 @@ export function OrgCreateForm({ onSubmit, onCancel }: OrgCreateFormProps) {
         placeholder="https://example.com/logo.png"
         description="Optional"
       />
-      <FormInput control={control} name="metadata" label="Metadata" placeholder="Optional metadata" />
+      <FormInput
+        control={control}
+        name="metadata"
+        label="Metadata"
+        placeholder='{"key": "value"}'
+        description="Optional JSON metadata"
+      />
 
       <DialogFooter>
         <DialogClose asChild>

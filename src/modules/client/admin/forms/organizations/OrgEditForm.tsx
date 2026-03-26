@@ -30,7 +30,7 @@ export function OrgEditForm({ onSubmit, onCancel }: OrgEditFormProps) {
         description="Lowercase letters, numbers, and hyphens only"
       />
       <FormInput control={control} name="logo" label="Logo URL" placeholder="https://example.com/logo.png" />
-      <FormInput control={control} name="metadata" label="Metadata" placeholder="Optional metadata" />
+      <FormInput control={control} name="metadata" label="Metadata" placeholder='{"key": "value"}' description="Optional JSON metadata" />
 
       <DialogFooter>
         <DialogClose asChild>

@@ -63,7 +63,9 @@ export const CreateOrganizationModal = () => {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Organization</DialogTitle>
-          <DialogDescription>Add a new organization to the system.</DialogDescription>
+          <DialogDescription>
+            Add a new organization to the system.
+          </DialogDescription>
         </DialogHeader>
         <FormProvider {...form}>
           <OrgCreateForm onSubmit={handleSubmit} onCancel={handleClose} />

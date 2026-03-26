@@ -1,0 +1,95 @@
+import { NextRequest, NextResponse } from "next/server";
+import { headers } from "next/headers";
+import { auth } from "@/modules/server/auth-provider/auth";
+import { prisma } from "../../../../../prisma/db";
+import { getUserPermissions } from "@/modules/server/utils/getUserPermissions";
+
+interface NavNode {
+  id: string;
+  label: string;
+  slug: string;
+  icon: string | null;
+  href: string | null;
+  type: string;
+  permissionKeys: string[];
+  children: NavNode[];
+}
+
+interface NavApp {
+  id: string;
+  name: string;
+  slug: string;
+  menus: NavNode[];
+}
+
+export async function GET(req: NextRequest) {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const organizationId =
+    req.nextUrl.searchParams.get("organizationId") ??
+    session.session.activeOrganizationId;
+
+  if (!organizationId) {
+    return NextResponse.json({ apps: [] });
+  }
+
+  const permSet = await getUserPermissions(session.user.id, organizationId);
+
+  const appsWithMenus = await prisma.app.findMany({
+    where: { isActive: true, deletedAt: null },
+    orderBy: { name: "asc" },
+    include: {
+      menus: {
+        where: { isActive: true },
+        orderBy: { order: "asc" },
+      },
+    },
+  });
+
+  function filterNode(node: { permissionKeys: string[] }): boolean {
+    return (
+      node.permissionKeys.length === 0 ||
+      node.permissionKeys.some((k) => permSet.has(k))
+    );
+  }
+
+  function buildTree(
+    allNodes: typeof appsWithMenus[number]["menus"],
+    parentId: string | null = null,
+  ): NavNode[] {
+    return allNodes
+      .filter((n) => (n.parentId ?? null) === parentId)
+      .flatMap((n) => {
+        if (!filterNode(n)) return [];
+        const children = buildTree(allNodes, n.id);
+        if (n.type === "GROUP" && children.length === 0) return [];
+        return [
+          {
+            id: n.id,
+            label: n.label,
+            slug: n.slug,
+            icon: n.icon ?? null,
+            href: n.href ?? null,
+            type: n.type,
+            permissionKeys: n.permissionKeys,
+            children,
+          },
+        ];
+      });
+  }
+
+  const result: NavApp[] = appsWithMenus
+    .map((app) => ({
+      id: app.id,
+      name: app.name,
+      slug: app.slug,
+      menus: buildTree(app.menus),
+    }))
+    .filter((app) => app.menus.length > 0);
+
+  return NextResponse.json({ apps: result });
+}

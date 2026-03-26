@@ -219,9 +219,16 @@ export const authConfig = {
     jwt(),
 
     organization({
+      allowUserToCreateOrganization: async (user) => {
+        return user.role === "superadmin";
+      },
       teams: {
         enabled: true,
         allowRemovingAllTeams: true,
+      },
+      ac,
+      dynamicAccessControl: {
+        enabled: true,
       },
     }),
 

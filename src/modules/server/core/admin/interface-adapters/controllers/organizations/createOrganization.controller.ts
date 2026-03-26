@@ -5,7 +5,9 @@ import {
 import { InputParseError } from "@/modules/server/shared/errors/schemaParseError";
 import { createOrganizationUseCase } from "../../../application/usecases/organizations/createOrganization.usecase";
 
-function presenter(data: TOrganizationSummarySchema): TOrganizationSummarySchema {
+function presenter(
+  data: TOrganizationSummarySchema,
+): TOrganizationSummarySchema {
   return data;
 }
 

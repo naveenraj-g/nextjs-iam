@@ -48,7 +48,15 @@ export type ModalType =
   // Agent Auth — Hosts
   | "createHost"
   | "updateHost"
-  | "revokeHost";
+  | "revokeHost"
+  // RBAC — Apps
+  | "createApp"
+  | "editApp"
+  | "deleteApp"
+  // RBAC — Menu Nodes
+  | "createMenuNode"
+  | "editMenuNode"
+  | "deleteMenuNode";
 
 export interface ModalData {
   // Users
@@ -108,6 +116,24 @@ export interface ModalData {
   hostStatus?: string;
   hostDefaultCapabilities?: string[];
   hostJwksUrl?: string | null;
+  // RBAC — Apps
+  appId?: string;
+  appName?: string;
+  appSlug?: string;
+  appDescription?: string | null;
+  appIsActive?: boolean;
+  // RBAC — Menu Nodes
+  menuNodeId?: string;
+  menuNodeLabel?: string;
+  menuNodeSlug?: string;
+  menuNodeParentId?: string | null;
+  menuNodeIcon?: string | null;
+  menuNodeHref?: string | null;
+  menuNodeType?: "GROUP" | "ITEM";
+  menuNodeIsActive?: boolean;
+  menuNodeAppId?: string;
+  menuNodePermissionKeys?: string[];
+  menuNodeOrder?: number;
 }
 
 interface IAdminStore {
