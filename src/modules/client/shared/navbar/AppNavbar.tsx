@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeSwitcher } from "@/theme/ThemeSwitcher";
 import LocaleSwitcher from "../LocaleSwitcher";
+import { AppBreadcrumb } from "./AppBreadcrumb";
 
 const AppNavbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -44,6 +45,7 @@ const AppNavbar = () => {
             variant="outline"
           />
           <Separator orientation="vertical" className="!h-6" />
+          <AppBreadcrumb />
         </div>
 
         <div className="flex items-center gap-6">

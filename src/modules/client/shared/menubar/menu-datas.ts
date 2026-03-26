@@ -20,6 +20,8 @@ export const adminSidebarData = {
         },
       ],
     },
+
+    // Identity (BetterAuth domain)
     {
       title: "IDENTITY",
       items: [
@@ -33,15 +35,12 @@ export const adminSidebarData = {
           url: "/admin/organizations",
           icon: "building-2",
         },
-        {
-          title: "Teams",
-          url: "/admin/teams",
-          icon: "users",
-        },
       ],
     },
+
+    // Authorization (THIS is where your changes matter)
     {
-      title: "ACCESS CONTROL",
+      title: "AUTHORIZATION",
       items: [
         {
           title: "Roles",
@@ -49,12 +48,31 @@ export const adminSidebarData = {
           icon: "shield",
         },
         {
-          title: "Permissions",
-          url: "/admin/permissions",
-          icon: "lock",
+          title: "Resources",
+          url: "/admin/resources",
+          icon: "database",
+        },
+        {
+          title: "Actions",
+          url: "/admin/resource-actions",
+          icon: "zap",
         },
       ],
     },
+
+    // App + UI layer
+    {
+      title: "APPLICATION BUILDER",
+      items: [
+        {
+          title: "Apps",
+          url: "/admin/apps",
+          icon: "grid",
+        },
+      ],
+    },
+
+    // System integrations
     {
       title: "APPLICATION",
       items: [
@@ -80,6 +98,8 @@ export const adminSidebarData = {
         },
       ],
     },
+
+    // Security
     {
       title: "SECURITY",
       items: [
@@ -100,37 +120,6 @@ export const adminSidebarData = {
         },
       ],
     },
-    // {
-    //   title: "Admin Management",
-    //   icon: "user-star",
-    //   items: [
-    //     {
-    //       title: "Manage Apps",
-    //       url: "/bezs/admin/manage-apps",
-    //       icon: LayoutDashboard,
-    //     },
-    //     {
-    //       title: "Manage Organizations",
-    //       url: "/bezs/admin/manage-organizations",
-    //       icon: Building,
-    //     },
-    //     {
-    //       title: "Manage Roles",
-    //       url: "/bezs/admin/manage-roles",
-    //       icon: UserRoundCog,
-    //     },
-    //     {
-    //       title: "RBAC",
-    //       url: "/bezs/admin/rbac",
-    //       icon: ShieldUser,
-    //     },
-    //     {
-    //       title: "Preference Templates",
-    //       url: "/bezs/admin/manage-preferences",
-    //       icon: FileSliders,
-    //     },
-    //   ],
-    // },
   ],
 };
 
