@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     session.session.activeOrganizationId;
 
   if (!organizationId) {
-    return NextResponse.json({ apps: [] });
+    return NextResponse.json({ apps: [], permissions: [] });
   }
 
   const permSet = await getUserPermissions(session.user.id, organizationId);
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
   }
 
   function buildTree(
-    allNodes: typeof appsWithMenus[number]["menus"],
+    allNodes: (typeof appsWithMenus)[number]["menus"],
     parentId: string | null = null,
   ): NavNode[] {
     return allNodes
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
       });
   }
 
-  const result: NavApp[] = appsWithMenus
+  const apps: NavApp[] = appsWithMenus
     .map((app) => ({
       id: app.id,
       name: app.name,
@@ -91,5 +91,5 @@ export async function GET(req: NextRequest) {
     }))
     .filter((app) => app.menus.length > 0);
 
-  return NextResponse.json({ apps: result });
+  return NextResponse.json({ apps, permissions: Array.from(permSet) });
 }
