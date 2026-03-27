@@ -12,7 +12,8 @@
     "db:studio": "pnpm dlx prisma studio --schema ./src/modules/server/prisma/schema/schema.prisma",
     "auth:generate": "pnpm dlx @better-auth/cli generate --config ./src/modules/server/auth-provider/auth.ts --output ./prisma/schema/schema.prisma",
     "deps": "pnpm dlx madge src/modules --circular --extensions ts",
-    "deps:graph": "madge src/modules --image deps.svg --extensions ts,tsx"
+    "deps:graph": "madge src/modules --image deps.svg --extensions ts,tsx",
+    "seed:admin-menu": "tsx --env-file=.env scripts/seed-admin-menu.ts"
   },
   "dependencies": {
     "@better-auth/agent-auth": "^0.4.3",

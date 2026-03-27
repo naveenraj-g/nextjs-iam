@@ -33,11 +33,9 @@ export async function GET(req: NextRequest) {
     req.nextUrl.searchParams.get("organizationId") ??
     session.session.activeOrganizationId;
 
-  if (!organizationId) {
-    return NextResponse.json({ apps: [], permissions: [] });
-  }
-
-  const permSet = await getUserPermissions(session.user.id, organizationId);
+  const permSet = organizationId
+    ? await getUserPermissions(session.user.id, organizationId)
+    : new Set<string>();
 
   const appsWithMenus = await prisma.app.findMany({
     where: { isActive: true, deletedAt: null },
