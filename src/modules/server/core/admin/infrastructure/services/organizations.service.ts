@@ -10,6 +10,8 @@ import {
   ListOrganizationsResponseSchema,
   OrganizationDetailSchema,
   OrganizationSummarySchema,
+  OrgRoleSchema,
+  ListOrgRolesResponseSchema,
   TListOrganizationsResponseSchema,
   TOrganizationDetailSchema,
   TOrganizationSummarySchema,
@@ -26,8 +28,39 @@ import {
   TRemoveTeamValidationSchema,
   TAddTeamMemberValidationSchema,
   TRemoveTeamMemberValidationSchema,
+  TOrgRoleSchema,
+  TListOrgRolesResponseSchema,
+  TCreateOrgRoleValidationSchema,
+  TUpdateOrgRoleValidationSchema,
+  TDeleteOrgRoleValidationSchema,
 } from "@/modules/entities/schemas/admin/organizations/organizations.schema";
 import { parseMetadata } from "@/modules/server/utils/helper";
+
+// BetterAuth stores one row per (organizationId, role) with permission as a JSON
+// object: { [resource]: string[] }. Internally we use "resource:action" key strings.
+
+function orgPermissionKeysToJson(keys: string[]): string {
+  const grouped: Record<string, string[]> = {};
+  for (const key of keys) {
+    const colonIdx = key.indexOf(":");
+    if (colonIdx < 1) continue;
+    const resource = key.slice(0, colonIdx);
+    const action = key.slice(colonIdx + 1);
+    (grouped[resource] ??= []).push(action);
+  }
+  return JSON.stringify(grouped);
+}
+
+function orgPermissionJsonToKeys(json: string): string[] {
+  try {
+    const parsed = JSON.parse(json) as Record<string, string[]>;
+    return Object.entries(parsed).flatMap(([resource, actions]) =>
+      actions.map((action) => `${resource}:${action}`),
+    );
+  } catch {
+    return [];
+  }
+}
 
 export class OrganizationsService implements IOrganizationsService {
   async listOrganizations(): Promise<TListOrganizationsResponseSchema> {
@@ -403,7 +436,7 @@ export class OrganizationsService implements IOrganizationsService {
         body: {
           userId: payload.userId,
           organizationId: payload.organizationId,
-          role: [payload.role],
+          role: payload.roles as ("member" | "admin" | "owner")[],
         },
         headers: await headers(),
       });
@@ -443,7 +476,7 @@ export class OrganizationsService implements IOrganizationsService {
         body: {
           memberId: payload.memberId,
           organizationId: payload.organizationId,
-          role: [payload.role],
+          role: payload.roles,
         },
         headers: await headers(),
       });
@@ -773,5 +806,68 @@ export class OrganizationsService implements IOrganizationsService {
       if (error instanceof InfrastructureError) throw error;
       mapBetterAuthError(error, "Failed to remove team member");
     }
+  }
+
+  async listOrgRoles(organizationId: string): Promise<TListOrgRolesResponseSchema> {
+    const rows = await prisma.organizationRole.findMany({
+      where: { organizationId },
+      orderBy: { role: "asc" },
+    });
+    const roles = rows.map((row) => ({
+      role: row.role,
+      permissions: orgPermissionJsonToKeys(row.permission),
+      createdAt: row.createdAt,
+    }));
+    return ListOrgRolesResponseSchema.parse({ roles });
+  }
+
+  async createOrgRole(payload: TCreateOrgRoleValidationSchema): Promise<TOrgRoleSchema> {
+    const now = new Date();
+    await prisma.organizationRole.create({
+      data: {
+        id: randomUUID(),
+        organizationId: payload.organizationId,
+        role: payload.role,
+        permission: orgPermissionKeysToJson(payload.permissions),
+      },
+    });
+    return OrgRoleSchema.parse({ role: payload.role, permissions: payload.permissions, createdAt: now });
+  }
+
+  async updateOrgRole(payload: TUpdateOrgRoleValidationSchema): Promise<TOrgRoleSchema> {
+    const existing = await prisma.organizationRole.findFirst({
+      where: { organizationId: payload.organizationId, role: payload.role },
+    });
+    const permissionJson = orgPermissionKeysToJson(payload.permissions);
+    if (existing) {
+      await prisma.organizationRole.update({
+        where: { id: existing.id },
+        data: { permission: permissionJson },
+      });
+    } else {
+      await prisma.organizationRole.create({
+        data: {
+          id: randomUUID(),
+          organizationId: payload.organizationId,
+          role: payload.role,
+          permission: permissionJson,
+        },
+      });
+    }
+    const updated = await prisma.organizationRole.findFirst({
+      where: { organizationId: payload.organizationId, role: payload.role },
+    });
+    return OrgRoleSchema.parse({
+      role: payload.role,
+      permissions: payload.permissions,
+      createdAt: updated?.createdAt ?? new Date(),
+    });
+  }
+
+  async deleteOrgRole(payload: TDeleteOrgRoleValidationSchema): Promise<{ success: boolean }> {
+    await prisma.organizationRole.deleteMany({
+      where: { organizationId: payload.organizationId, role: payload.role },
+    });
+    return { success: true };
   }
 }

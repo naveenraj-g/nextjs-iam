@@ -1,32 +1,70 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
-import { SelectItem } from "@/components/ui/select";
+import { Controller, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
+import { FormMessage } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
 import { TUpdateMemberRoleValidationSchema } from "@/modules/entities/schemas/admin/organizations/organizations.schema";
-import { FormSelect } from "@/modules/client/shared/custom-form-fields";
+import { cn } from "@/lib/utils";
 
 interface UpdateMemberRoleFormProps {
   onSubmit: (data: TUpdateMemberRoleValidationSchema) => Promise<void>;
   onCancel: () => void;
+  availableRoles: string[];
 }
 
-export function UpdateMemberRoleForm({ onSubmit, onCancel }: UpdateMemberRoleFormProps) {
+function roleLabel(role: string) {
+  return role.charAt(0).toUpperCase() + role.slice(1);
+}
+
+export function UpdateMemberRoleForm({ onSubmit, onCancel, availableRoles }: UpdateMemberRoleFormProps) {
   const form = useFormContext<TUpdateMemberRoleValidationSchema>();
   const {
     control,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = form;
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <FormSelect control={control} name="role" label="New Role">
-        <SelectItem value="member">Member</SelectItem>
-        <SelectItem value="admin">Admin</SelectItem>
-        <SelectItem value="owner">Owner</SelectItem>
-      </FormSelect>
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Roles</p>
+        <Controller
+          control={control}
+          name="roles"
+          render={({ field }) => (
+            <div className="grid grid-cols-2 gap-2">
+              {availableRoles.map((role) => {
+                const checked = field.value?.includes(role) ?? false;
+                return (
+                  <label
+                    key={role}
+                    className={cn(
+                      "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-sm",
+                      checked && "border-primary bg-primary/5",
+                    )}
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={(val) => {
+                        const next = val
+                          ? [...(field.value ?? []), role]
+                          : (field.value ?? []).filter((r) => r !== role);
+                        field.onChange(next);
+                      }}
+                    />
+                    {roleLabel(role)}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        />
+        {errors.roles && (
+          <FormMessage>{errors.roles.message}</FormMessage>
+        )}
+      </div>
 
       <DialogFooter>
         <DialogClose asChild>

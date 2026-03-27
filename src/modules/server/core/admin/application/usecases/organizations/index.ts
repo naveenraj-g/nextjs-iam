@@ -13,3 +13,7 @@ export * from "./updateTeam.usecase";
 export * from "./removeTeam.usecase";
 export * from "./addTeamMember.usecase";
 export * from "./removeTeamMember.usecase";
+export * from "./listOrgRoles.usecase";
+export * from "./createOrgRole.usecase";
+export * from "./updateOrgRole.usecase";
+export * from "./deleteOrgRole.usecase";

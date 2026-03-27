@@ -12,13 +12,18 @@ import { useAdminStore } from "../../stores/admin.store";
 import { useServerAction } from "zsa-react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useState } from "react";
 import {
   UpdateMemberRoleValidationSchema,
   TUpdateMemberRoleValidationSchema,
+  TOrgRoleSchema,
 } from "@/modules/entities/schemas/admin/organizations/organizations.schema";
 import { updateMemberRoleAction } from "@/modules/server/presentation/actions/admin/organizations.action";
+import { listOrgRolesAction } from "@/modules/server/presentation/actions/admin/organizations.action";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import { UpdateMemberRoleForm } from "../../forms/organizations/UpdateMemberRoleForm";
+
+const DEFAULT_ROLES = ["member", "admin", "owner"];
 
 export const UpdateMemberRoleModal = () => {
   const closeModal = useAdminStore((state) => state.onClose);
@@ -28,12 +33,26 @@ export const UpdateMemberRoleModal = () => {
 
   const isModalOpen = isOpen && modalType === "updateMemberRole";
 
+  const [availableRoles, setAvailableRoles] = useState<string[]>(DEFAULT_ROLES);
+
+  useEffect(() => {
+    if (!isModalOpen || !modalData?.organizationId) return;
+    void (async () => {
+      const [data] = await listOrgRolesAction({ organizationId: modalData.organizationId! });
+      if (data) {
+        const customRoles = (data as TOrgRoleSchema[]).map((r) => r.role);
+        const combined = [...DEFAULT_ROLES, ...customRoles.filter((r: string) => !DEFAULT_ROLES.includes(r))];
+        setAvailableRoles(combined);
+      }
+    })();
+  }, [isModalOpen, modalData?.organizationId]);
+
   const form = useForm<TUpdateMemberRoleValidationSchema>({
     resolver: zodResolver(UpdateMemberRoleValidationSchema),
     values: {
       memberId: modalData?.memberId ?? "",
       organizationId: modalData?.organizationId ?? "",
-      role: (modalData?.memberRole as "member" | "admin" | "owner") ?? "member",
+      roles: modalData?.memberRoles ?? [],
     },
   });
 
@@ -63,6 +82,7 @@ export const UpdateMemberRoleModal = () => {
 
   function handleClose() {
     form.reset();
+    setAvailableRoles(DEFAULT_ROLES);
     closeModal();
   }
 
@@ -76,7 +96,11 @@ export const UpdateMemberRoleModal = () => {
           </DialogDescription>
         </DialogHeader>
         <FormProvider {...form}>
-          <UpdateMemberRoleForm onSubmit={handleSubmit} onCancel={handleClose} />
+          <UpdateMemberRoleForm
+            onSubmit={handleSubmit}
+            onCancel={handleClose}
+            availableRoles={availableRoles}
+          />
         </FormProvider>
       </DialogContent>
     </Dialog>

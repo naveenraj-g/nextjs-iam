@@ -52,18 +52,28 @@ export const membersTableColumn = (organizationId: string): ColumnDef<TOrgMember
     accessorKey: "role",
     header: "Role",
     cell: ({ row }) => {
-      const role = row.original.role ?? "member";
-      const cls = roleBadgeClass[role] ?? roleBadgeClass.member;
+      const roles = (row.original.role ?? "member")
+        .split(",")
+        .map((r) => r.trim())
+        .filter(Boolean);
       return (
-        <Badge
-          className={cn(
-            buttonVariants({ size: "sm", variant: "default" }),
-            "cursor-default h-6 rounded-lg",
-            cls,
-          )}
-        >
-          {role}
-        </Badge>
+        <div className="flex flex-wrap gap-1">
+          {roles.map((role) => {
+            const cls = roleBadgeClass[role] ?? roleBadgeClass.member;
+            return (
+              <Badge
+                key={role}
+                className={cn(
+                  buttonVariants({ size: "sm", variant: "default" }),
+                  "cursor-default h-6 rounded-lg",
+                  cls,
+                )}
+              >
+                {role}
+              </Badge>
+            );
+          })}
+        </div>
       );
     },
   },
@@ -86,7 +96,10 @@ export const membersTableColumn = (organizationId: string): ColumnDef<TOrgMember
         memberId: member.id,
         memberUserId: member.userId,
         memberName: member.user.name,
-        memberRole: member.role,
+        memberRoles: (member.role ?? "member")
+          .split(",")
+          .map((r) => r.trim())
+          .filter(Boolean),
         organizationId,
       };
 

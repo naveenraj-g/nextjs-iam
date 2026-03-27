@@ -11,10 +11,25 @@ export async function getUserPermissions(
 
   if (!member) return new Set();
 
+  const roles = member.role.split(",").map((r) => r.trim()).filter(Boolean);
+
   const orgRoles = await prisma.organizationRole.findMany({
-    where: { organizationId, role: member.role },
+    where: { organizationId, role: { in: roles } },
     select: { permission: true },
   });
 
-  return new Set(orgRoles.map((r) => r.permission));
+  const keys: string[] = [];
+  for (const row of orgRoles) {
+    try {
+      const parsed = JSON.parse(row.permission) as Record<string, string[]>;
+      for (const [resource, actions] of Object.entries(parsed)) {
+        for (const action of actions) {
+          keys.push(`${resource}:${action}`);
+        }
+      }
+    } catch {
+      // skip malformed rows
+    }
+  }
+  return new Set(keys);
 }

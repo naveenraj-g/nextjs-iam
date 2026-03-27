@@ -64,7 +64,11 @@ export type ModalType =
   // Resource Actions
   | "createResourceAction"
   | "editResourceAction"
-  | "deleteResourceAction";
+  | "deleteResourceAction"
+  // Org Roles
+  | "createOrgRole"
+  | "editOrgRole"
+  | "deleteOrgRole";
 
 export interface ModalData {
   // Users
@@ -92,7 +96,7 @@ export interface ModalData {
   memberId?: string;
   memberUserId?: string;
   memberName?: string;
-  memberRole?: string;
+  memberRoles?: string[];
   // Invitations
   invitationId?: string;
   invitationEmail?: string;
@@ -153,6 +157,10 @@ export interface ModalData {
   resourceActionDescription?: string | null;
   resourceActionResourceId?: string;
   resourceActionResourceName?: string;
+  // Org Roles
+  orgRoleOrganizationId?: string;
+  orgRoleName?: string;
+  orgRolePermissions?: string[];
 }
 
 interface IAdminStore {

@@ -34,6 +34,8 @@ const SEGMENT_LABELS: Record<string, string> = {
   // Resources
   resources: "Resources",
   "resource-actions": "Resource Actions",
+  // Org roles
+  roles: "Roles",
 };
 
 function getLabel(segment: string): string {

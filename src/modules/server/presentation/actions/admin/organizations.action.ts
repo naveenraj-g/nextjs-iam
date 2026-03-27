@@ -33,6 +33,14 @@ import {
   TAddTeamMemberControllerOutput,
   removeTeamMemberController,
   TRemoveTeamMemberControllerOutput,
+  listOrgRolesController,
+  TListOrgRolesControllerOutput,
+  createOrgRoleController,
+  TCreateOrgRoleControllerOutput,
+  updateOrgRoleController,
+  TUpdateOrgRoleControllerOutput,
+  deleteOrgRoleController,
+  TDeleteOrgRoleControllerOutput,
 } from "@/modules/server/core/admin/interface-adapters/controllers/organizations";
 import {
   CreateOrganizationActionSchema,
@@ -48,6 +56,9 @@ import {
   RemoveTeamActionSchema,
   AddTeamMemberActionSchema,
   RemoveTeamMemberActionSchema,
+  CreateOrgRoleActionSchema,
+  UpdateOrgRoleActionSchema,
+  DeleteOrgRoleActionSchema,
 } from "@/modules/entities/schemas/admin/organizations/organizations.schema";
 import z from "zod";
 
@@ -204,6 +215,46 @@ export const removeTeamMemberAction = createServerAction()
   .handler(async ({ input }) => {
     return await runWithTransport<TRemoveTeamMemberControllerOutput>(async () => {
       const data = await removeTeamMemberController(input.payload);
+      return { result: data, transport: input.transportOptions };
+    });
+  });
+
+// ---------------------------------------------------------- //
+// Org role actions
+// ---------------------------------------------------------- //
+
+export const listOrgRolesAction = createServerAction()
+  .input(z.object({ organizationId: z.string() }))
+  .handler(async ({ input }) => {
+    return await runWithTransport<TListOrgRolesControllerOutput>(async () => {
+      const data = await listOrgRolesController(input.organizationId);
+      return { result: data };
+    });
+  });
+
+export const createOrgRoleAction = createServerAction()
+  .input(CreateOrgRoleActionSchema, { skipInputParsing: true })
+  .handler(async ({ input }) => {
+    return await runWithTransport<TCreateOrgRoleControllerOutput>(async () => {
+      const data = await createOrgRoleController(input.payload);
+      return { result: data, transport: input.transportOptions };
+    });
+  });
+
+export const updateOrgRoleAction = createServerAction()
+  .input(UpdateOrgRoleActionSchema, { skipInputParsing: true })
+  .handler(async ({ input }) => {
+    return await runWithTransport<TUpdateOrgRoleControllerOutput>(async () => {
+      const data = await updateOrgRoleController(input.payload);
+      return { result: data, transport: input.transportOptions };
+    });
+  });
+
+export const deleteOrgRoleAction = createServerAction()
+  .input(DeleteOrgRoleActionSchema, { skipInputParsing: true })
+  .handler(async ({ input }) => {
+    return await runWithTransport<TDeleteOrgRoleControllerOutput>(async () => {
+      const data = await deleteOrgRoleController(input.payload);
       return { result: data, transport: input.transportOptions };
     });
   });

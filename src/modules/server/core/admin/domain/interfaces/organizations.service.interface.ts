@@ -15,6 +15,11 @@ import {
   TRemoveTeamValidationSchema,
   TAddTeamMemberValidationSchema,
   TRemoveTeamMemberValidationSchema,
+  TOrgRoleSchema,
+  TListOrgRolesResponseSchema,
+  TCreateOrgRoleValidationSchema,
+  TUpdateOrgRoleValidationSchema,
+  TDeleteOrgRoleValidationSchema,
 } from "@/modules/entities/schemas/admin/organizations/organizations.schema";
 
 export interface IOrganizationsService {
@@ -38,4 +43,9 @@ export interface IOrganizationsService {
 
   addTeamMember(payload: TAddTeamMemberValidationSchema): Promise<{ success: boolean }>;
   removeTeamMember(payload: TRemoveTeamMemberValidationSchema): Promise<{ success: boolean }>;
+
+  listOrgRoles(organizationId: string): Promise<TListOrgRolesResponseSchema>;
+  createOrgRole(payload: TCreateOrgRoleValidationSchema): Promise<TOrgRoleSchema>;
+  updateOrgRole(payload: TUpdateOrgRoleValidationSchema): Promise<TOrgRoleSchema>;
+  deleteOrgRole(payload: TDeleteOrgRoleValidationSchema): Promise<{ success: boolean }>;
 }

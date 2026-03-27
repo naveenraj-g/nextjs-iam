@@ -14,6 +14,9 @@ import { UpdateTeamModal } from "../modals/organizations/UpdateTeamModal";
 import { RemoveTeamModal } from "../modals/organizations/RemoveTeamModal";
 import { AddTeamMemberModal } from "../modals/organizations/AddTeamMemberModal";
 import { RemoveTeamMemberModal } from "../modals/organizations/RemoveTeamMemberModal";
+import { CreateOrgRoleModal } from "../modals/organizations/CreateOrgRoleModal";
+import { EditOrgRoleModal } from "../modals/organizations/EditOrgRoleModal";
+import { DeleteOrgRoleModal } from "../modals/organizations/DeleteOrgRoleModal";
 
 export const OrganizationModalProvider = () => {
   const isMounted = useSyncExternalStore(
@@ -39,6 +42,9 @@ export const OrganizationModalProvider = () => {
       <RemoveTeamModal />
       <AddTeamMemberModal />
       <RemoveTeamMemberModal />
+      <CreateOrgRoleModal />
+      <EditOrgRoleModal />
+      <DeleteOrgRoleModal />
     </>
   );
 };

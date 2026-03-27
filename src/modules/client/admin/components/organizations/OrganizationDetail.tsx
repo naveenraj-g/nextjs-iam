@@ -1,8 +1,8 @@
 "use client";
 
-import { AlertCircle, Building2, Mail, Users } from "lucide-react";
+import { AlertCircle, Building2, Mail, Shield, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { IOrgDetailProps } from "../../types/organizations.type";
 import { EmptyState } from "@/modules/client/shared/components/EmptyState";
 import { useAdminStore } from "../../stores/admin.store";
@@ -10,6 +10,8 @@ import DataTable from "@/modules/client/shared/components/table/data-table";
 import { membersTableColumn } from "./MembersTableColumn";
 import { invitationsTableColumn } from "./InvitationsTableColumn";
 import { TeamsSection } from "./TeamsSection";
+import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils";
 
 function OrganizationDetail({ organization, error }: IOrgDetailProps) {
   const openModal = useAdminStore((state) => state.onOpen);
@@ -36,6 +38,16 @@ function OrganizationDetail({ organization, error }: IOrgDetailProps) {
   }
 
   return (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <Link
+          href={`/admin/organizations/${organization.id}/roles`}
+          className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-2")}
+        >
+          <Shield className="h-4 w-4" />
+          Manage Roles
+        </Link>
+      </div>
     <Tabs defaultValue="members" className="space-y-6">
       <TabsList>
         <TabsTrigger value="members" className="gap-2">
@@ -105,6 +117,7 @@ function OrganizationDetail({ organization, error }: IOrgDetailProps) {
         <TeamsSection teams={organization.teams} organizationId={organization.id} />
       </TabsContent>
     </Tabs>
+    </div>
   );
 }
 

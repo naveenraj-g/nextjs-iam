@@ -141,7 +141,7 @@ export const DeleteOrganizationActionSchema = z.object({
 export const AddMemberValidationSchema = z.object({
   organizationId: z.string(),
   userId: z.string(),
-  role: z.enum(["member", "admin", "owner"]),
+  roles: z.array(z.string()).min(1, "Select at least one role"),
 });
 
 export const AddMemberActionSchema = z.object({
@@ -152,7 +152,7 @@ export const AddMemberActionSchema = z.object({
 export const UpdateMemberRoleValidationSchema = z.object({
   memberId: z.string(),
   organizationId: z.string(),
-  role: z.enum(["member", "admin", "owner"]),
+  roles: z.array(z.string()).min(1, "Select at least one role"),
 });
 
 export const UpdateMemberRoleActionSchema = z.object({
@@ -273,3 +273,58 @@ export type TUpdateTeamValidationSchema = z.infer<typeof UpdateTeamValidationSch
 export type TRemoveTeamValidationSchema = z.infer<typeof RemoveTeamValidationSchema>;
 export type TAddTeamMemberValidationSchema = z.infer<typeof AddTeamMemberValidationSchema>;
 export type TRemoveTeamMemberValidationSchema = z.infer<typeof RemoveTeamMemberValidationSchema>;
+
+// ---------------------------------------------------------- //
+// OrgRole schemas
+// ---------------------------------------------------------- //
+
+export const OrgRoleSchema = z.object({
+  role: z.string(),
+  permissions: z.array(z.string()),
+  createdAt: z.coerce.date(),
+});
+export type TOrgRoleSchema = z.infer<typeof OrgRoleSchema>;
+
+export const ListOrgRolesResponseSchema = z.object({
+  roles: z.array(OrgRoleSchema),
+});
+export type TListOrgRolesResponseSchema = z.infer<typeof ListOrgRolesResponseSchema>;
+
+export const CreateOrgRoleValidationSchema = z.object({
+  organizationId: z.string(),
+  role: z
+    .string()
+    .min(1, "Role name is required")
+    .max(64)
+    .regex(/^[a-z0-9_-]+$/, "Lowercase, numbers, hyphens, underscores only"),
+  permissions: z.array(z.string()).min(1, "Select at least one permission"),
+});
+export type TCreateOrgRoleValidationSchema = z.infer<typeof CreateOrgRoleValidationSchema>;
+
+export const CreateOrgRoleActionSchema = z.object({
+  payload: CreateOrgRoleValidationSchema,
+  transportOptions: TransportOptionsSchema.optional(),
+});
+
+export const UpdateOrgRoleValidationSchema = z.object({
+  organizationId: z.string(),
+  role: z.string().min(1),
+  permissions: z.array(z.string()).min(1, "Select at least one permission"),
+});
+export type TUpdateOrgRoleValidationSchema = z.infer<typeof UpdateOrgRoleValidationSchema>;
+
+export const UpdateOrgRoleActionSchema = z.object({
+  payload: UpdateOrgRoleValidationSchema,
+  transportOptions: TransportOptionsSchema.optional(),
+});
+
+export const DeleteOrgRoleValidationSchema = z.object({
+  organizationId: z.string(),
+  role: z.string().min(1),
+});
+export type TDeleteOrgRoleValidationSchema = z.infer<typeof DeleteOrgRoleValidationSchema>;
+
+export const DeleteOrgRoleActionSchema = z.object({
+  payload: DeleteOrgRoleValidationSchema,
+  transportOptions: TransportOptionsSchema.optional(),
+});
