@@ -22,6 +22,13 @@ interface NavApp {
   menus: NavNode[];
 }
 
+interface OrgSummary {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+}
+
 export async function GET(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
 
@@ -33,20 +40,34 @@ export async function GET(req: NextRequest) {
     req.nextUrl.searchParams.get("organizationId") ??
     session.session.activeOrganizationId;
 
-  const permSet = organizationId
-    ? await getUserPermissions(session.user.id, organizationId)
-    : new Set<string>();
-
-  const appsWithMenus = await prisma.app.findMany({
-    where: { isActive: true, deletedAt: null },
-    orderBy: { name: "asc" },
-    include: {
-      menus: {
-        where: { isActive: true },
-        orderBy: { order: "asc" },
+  const [permSet, memberships, appsWithMenus] = await Promise.all([
+    organizationId
+      ? getUserPermissions(session.user.id, organizationId)
+      : Promise.resolve(new Set<string>()),
+    prisma.member.findMany({
+      where: { userId: session.user.id },
+      select: {
+        organization: { select: { id: true, name: true, slug: true, logo: true } },
       },
-    },
-  });
+    }),
+    prisma.app.findMany({
+      where: { isActive: true, deletedAt: null },
+      orderBy: { name: "asc" },
+      include: {
+        menus: {
+          where: { isActive: true },
+          orderBy: { order: "asc" },
+        },
+      },
+    }),
+  ]);
+
+  const organizations: OrgSummary[] = memberships.map((m) => ({
+    id: m.organization.id,
+    name: m.organization.name,
+    slug: m.organization.slug,
+    logo: m.organization.logo,
+  }));
 
   function filterNode(node: { permissionKeys: string[] }): boolean {
     return (
@@ -89,5 +110,10 @@ export async function GET(req: NextRequest) {
     }))
     .filter((app) => app.menus.length > 0);
 
-  return NextResponse.json({ apps, permissions: Array.from(permSet) });
+  return NextResponse.json({
+    apps,
+    permissions: Array.from(permSet),
+    organizations,
+    activeOrganizationId: session.session.activeOrganizationId ?? null,
+  });
 }

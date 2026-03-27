@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "@/i18n/navigation";
 import {
   Sidebar,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/sidebar";
 import { NavGroup } from "./nav-group";
 import { NavUser } from "../NavUser";
-import { AppTitle } from "./AppTitle";
+import { OrgSwitcher } from "./org-switcher";
 import { type NavGroup as NavGroupProps } from "./types";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -41,6 +41,20 @@ interface ContextApp {
   name: string;
   slug: string;
   menus: NavNode[];
+}
+
+interface ContextOrg {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+}
+
+interface ContextResponse {
+  apps: ContextApp[];
+  permissions: string[];
+  organizations: ContextOrg[];
+  activeOrganizationId: string | null;
 }
 
 // ------------------------------------------------------------------ //
@@ -84,14 +98,14 @@ function NavSkeleton() {
       {SKELETON_GROUPS.map((count, gi) => (
         <SidebarGroup key={gi}>
           <SidebarGroupLabel>
-            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-full bg-muted-foreground/25" />
           </SidebarGroupLabel>
           <SidebarMenu>
             {Array.from({ length: count }).map((_, ii) => (
               <SidebarMenuItem key={ii}>
                 <SidebarMenuButton>
-                  <Skeleton className="h-4 w-4 rounded" />
-                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-4 w-4 shrink-0 rounded bg-muted-foreground/25" />
+                  <Skeleton className="h-4 flex-1 bg-muted-foreground/25" />
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
@@ -104,6 +118,10 @@ function NavSkeleton() {
 
 export function MenuBar() {
   const [allApps, setAllApps] = useState<ContextApp[]>([]);
+  const [organizations, setOrganizations] = useState<ContextOrg[]>([]);
+  const [activeOrganizationId, setActiveOrganizationId] = useState<
+    string | null
+  >(null);
   const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
 
@@ -114,23 +132,44 @@ export function MenuBar() {
   const currentApp = allApps.find((a) => a.slug === currentAppSlug);
   const navGroups = currentApp ? buildNavGroups([currentApp]) : [];
 
-  useEffect(() => {
-    fetch("/api/me/context")
-      .then((res) => res.json() as Promise<{ apps: ContextApp[] }>)
-      .then(({ apps }) => setAllApps(apps))
+  const fetchContext = useCallback((orgId?: string) => {
+    const url = orgId
+      ? `/api/me/context?organizationId=${orgId}`
+      : "/api/me/context";
+    return fetch(url)
+      .then((res) => res.json() as Promise<ContextResponse>)
+      .then((data) => {
+        setAllApps(data.apps);
+        setOrganizations(data.organizations);
+        setActiveOrganizationId(data.activeOrganizationId);
+      })
       .catch(() => {
         // silently keep empty — auth guards handle access
-      })
-      .finally(() => setIsLoading(false));
+      });
   }, []);
+
+  useEffect(() => {
+    fetchContext().finally(() => setIsLoading(false));
+  }, [fetchContext]);
+
+  function handleOrgSwitch(orgId: string) {
+    setActiveOrganizationId(orgId);
+    fetchContext(orgId);
+  }
 
   return (
     <Sidebar collapsible="icon" side="left">
       <SidebarHeader>
-        <AppTitle />
+        {organizations.length > 0 ? (
+          <OrgSwitcher
+            orgs={organizations}
+            activeOrganizationId={activeOrganizationId}
+            onSwitch={handleOrgSwitch}
+          />
+        ) : null}
       </SidebarHeader>
       <SidebarContent>
-        {!isLoading ? (
+        {isLoading ? (
           <NavSkeleton />
         ) : (
           navGroups.map((props) => <NavGroup key={props.title} {...props} />)
