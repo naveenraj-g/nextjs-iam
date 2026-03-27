@@ -68,7 +68,12 @@ export type ModalType =
   // Org Roles
   | "createOrgRole"
   | "editOrgRole"
-  | "deleteOrgRole";
+  | "deleteOrgRole"
+  // API Keys
+  | "createApiKey"
+  | "editApiKey"
+  | "deleteApiKey"
+  | "viewApiKeySecret";
 
 export interface ModalData {
   // Users
@@ -161,6 +166,14 @@ export interface ModalData {
   orgRoleOrganizationId?: string;
   orgRoleName?: string;
   orgRolePermissions?: string[];
+  // API Keys
+  apiKeyId?: string;
+  apiKeyName?: string | null;
+  apiKeyStart?: string | null;
+  apiKeyPrefix?: string | null;
+  apiKeyEnabled?: boolean;
+  apiKeySecret?: string;   // raw key — only available right after creation
+  apiKeyReferenceId?: string;
 }
 
 interface IAdminStore {
