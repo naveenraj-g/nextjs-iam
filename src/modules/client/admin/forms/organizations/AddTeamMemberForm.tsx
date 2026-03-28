@@ -21,7 +21,7 @@ export function AddTeamMemberForm({ onSubmit, onCancel }: AddTeamMemberFormProps
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <FormInput control={control} name="userId" label="User ID" placeholder="Enter user ID" />
+      <FormInput control={control} name="email" label="Email Address" placeholder="user@example.com" type="email" />
 
       <DialogFooter>
         <DialogClose asChild>

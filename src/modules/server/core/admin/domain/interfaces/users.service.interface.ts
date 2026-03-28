@@ -10,6 +10,7 @@ import {
 
 export interface IUsersService {
   getUsers(): Promise<TGetUsersResponseDtoSchema>;
+  getUserByEmail(email: string): Promise<TUserSchema>;
   createUser(payload: TCreateUserValidationSchema): Promise<TUserSchema>;
   updateUser(payload: TUpdateUserValidationSchema): Promise<TUserSchema>;
   setUserRole(payload: TSetUserRoleValidationSchema): Promise<TUserSchema>;

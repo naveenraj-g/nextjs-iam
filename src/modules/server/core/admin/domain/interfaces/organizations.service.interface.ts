@@ -5,7 +5,7 @@ import {
   TCreateOrganizationValidationSchema,
   TUpdateOrganizationValidationSchema,
   TDeleteOrganizationValidationSchema,
-  TAddMemberValidationSchema,
+  TAddMemberServiceSchema,
   TUpdateMemberRoleValidationSchema,
   TRemoveMemberValidationSchema,
   TCreateInvitationValidationSchema,
@@ -13,7 +13,7 @@ import {
   TCreateTeamValidationSchema,
   TUpdateTeamValidationSchema,
   TRemoveTeamValidationSchema,
-  TAddTeamMemberValidationSchema,
+  TAddTeamMemberServiceSchema,
   TRemoveTeamMemberValidationSchema,
   TOrgRoleSchema,
   TListOrgRolesResponseSchema,
@@ -30,7 +30,7 @@ export interface IOrganizationsService {
   updateOrganization(payload: TUpdateOrganizationValidationSchema): Promise<TOrganizationSummarySchema>;
   deleteOrganization(payload: TDeleteOrganizationValidationSchema): Promise<{ success: boolean }>;
 
-  addMember(payload: TAddMemberValidationSchema): Promise<{ success: boolean }>;
+  addMember(payload: TAddMemberServiceSchema): Promise<{ success: boolean }>;
   updateMemberRole(payload: TUpdateMemberRoleValidationSchema): Promise<{ success: boolean }>;
   removeMember(payload: TRemoveMemberValidationSchema): Promise<{ success: boolean }>;
 
@@ -41,7 +41,8 @@ export interface IOrganizationsService {
   updateTeam(payload: TUpdateTeamValidationSchema): Promise<{ success: boolean }>;
   removeTeam(payload: TRemoveTeamValidationSchema): Promise<{ success: boolean }>;
 
-  addTeamMember(payload: TAddTeamMemberValidationSchema): Promise<{ success: boolean }>;
+  isMemberInOrg(organizationId: string, userId: string): Promise<boolean>;
+  addTeamMember(payload: TAddTeamMemberServiceSchema): Promise<{ success: boolean }>;
   removeTeamMember(payload: TRemoveTeamMemberValidationSchema): Promise<{ success: boolean }>;
 
   listOrgRoles(organizationId: string): Promise<TListOrgRolesResponseSchema>;

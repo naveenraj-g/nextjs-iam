@@ -138,9 +138,10 @@ export const DeleteOrganizationActionSchema = z.object({
 // Member mutation schemas
 // ---------------------------------------------------------- //
 
+// What the form/action receives (email-based, human-friendly)
 export const AddMemberValidationSchema = z.object({
   organizationId: z.string(),
-  userId: z.string(),
+  email: z.string().email("Enter a valid email address"),
   roles: z.array(z.string()).min(1, "Select at least one role"),
 });
 
@@ -148,6 +149,14 @@ export const AddMemberActionSchema = z.object({
   payload: AddMemberValidationSchema,
   transportOptions: TransportOptionsSchema.optional(),
 });
+
+// What the organizations service receives (userId-based, after lookup)
+export const AddMemberServiceSchema = z.object({
+  organizationId: z.string(),
+  userId: z.string(),
+  roles: z.array(z.string()),
+});
+export type TAddMemberServiceSchema = z.infer<typeof AddMemberServiceSchema>;
 
 export const UpdateMemberRoleValidationSchema = z.object({
   memberId: z.string(),
@@ -235,9 +244,10 @@ export const RemoveTeamActionSchema = z.object({
 // Team member mutation schemas
 // ---------------------------------------------------------- //
 
+// What the form/action receives (email-based)
 export const AddTeamMemberValidationSchema = z.object({
   teamId: z.string(),
-  userId: z.string(),
+  email: z.string().email("Enter a valid email address"),
   organizationId: z.string(),
 });
 
@@ -245,6 +255,14 @@ export const AddTeamMemberActionSchema = z.object({
   payload: AddTeamMemberValidationSchema,
   transportOptions: TransportOptionsSchema.optional(),
 });
+
+// What the organizations service receives (userId-based, after lookup)
+export const AddTeamMemberServiceSchema = z.object({
+  teamId: z.string(),
+  userId: z.string(),
+  organizationId: z.string(),
+});
+export type TAddTeamMemberServiceSchema = z.infer<typeof AddTeamMemberServiceSchema>;
 
 export const RemoveTeamMemberValidationSchema = z.object({
   teamMemberId: z.string(),

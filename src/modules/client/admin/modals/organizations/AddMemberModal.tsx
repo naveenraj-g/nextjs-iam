@@ -49,7 +49,7 @@ export const AddMemberModal = () => {
 
   const form = useForm<TAddMemberValidationSchema>({
     resolver: zodResolver(AddMemberValidationSchema),
-    defaultValues: { organizationId: "", userId: "", roles: [] },
+    defaultValues: { organizationId: "", email: "", roles: [] },
   });
 
   const { execute } = useServerAction(addMemberAction, {

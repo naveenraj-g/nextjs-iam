@@ -29,7 +29,7 @@ export function AddMemberForm({ onSubmit, onCancel, availableRoles }: AddMemberF
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-      <FormInput control={control} name="userId" label="User ID" placeholder="Enter user ID" />
+      <FormInput control={control} name="email" label="Email Address" placeholder="user@example.com" type="email" />
 
       <div className="space-y-2">
         <p className="text-sm font-medium">Roles</p>

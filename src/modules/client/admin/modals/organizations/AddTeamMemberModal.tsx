@@ -33,7 +33,7 @@ export const AddTeamMemberModal = () => {
     defaultValues: {
       teamId: modalData?.teamId ?? "",
       organizationId: modalData?.organizationId ?? "",
-      userId: "",
+      email: "",
     },
   });
 

@@ -20,22 +20,85 @@ export class UsersService implements IUsersService {
   async getUsers(): Promise<TGetUsersResponseDtoSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
-    logOperation("start", { name: "UsersService.getUsers", startTimeMs, context: { operationId } });
+    logOperation("start", {
+      name: "UsersService.getUsers",
+      startTimeMs,
+      context: { operationId },
+    });
     try {
-      const res = await auth.api.listUsers({ query: {}, headers: await headers() });
+      const res = await auth.api.listUsers({
+        query: {},
+        headers: await headers(),
+      });
       const data = await GetUsersResponseDtoSchema.parseAsync(res);
-      logOperation("success", { name: "UsersService.getUsers", startTimeMs, data, context: { operationId } });
+      logOperation("success", {
+        name: "UsersService.getUsers",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
       return data;
     } catch (error) {
-      logOperation("error", { name: "UsersService.getUsers", startTimeMs, err: error, context: { operationId } });
+      logOperation("error", {
+        name: "UsersService.getUsers",
+        startTimeMs,
+        err: error,
+        context: { operationId },
+      });
       mapBetterAuthError(error, "Failed to list users");
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<TUserSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+
+    logOperation("start", {
+      name: "UsersService.getUserByEmail",
+      startTimeMs,
+      context: { operationId, email },
+    });
+
+    try {
+      const res = await auth.api.listUsers({
+        query: { searchValue: email, searchField: "email", limit: 1 },
+        headers: await headers(),
+      });
+
+      const user = res?.users?.[0];
+
+      if (!user) throw new Error(`No user found with email: ${email}`);
+
+      const data = await UserSchema.parseAsync(user);
+
+      logOperation("success", {
+        name: "UsersService.getUserByEmail",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
+
+      return data;
+    } catch (error) {
+      logOperation("error", {
+        name: "UsersService.getUserByEmail",
+        startTimeMs,
+        err: error,
+        context: { operationId, email },
+      });
+
+      throw mapBetterAuthError(error, `No user found with email: ${email}`);
     }
   }
 
   async createUser(payload: TCreateUserValidationSchema): Promise<TUserSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
-    logOperation("start", { name: "UsersService.createUser", startTimeMs, context: { operationId } });
+    logOperation("start", {
+      name: "UsersService.createUser",
+      startTimeMs,
+      context: { operationId },
+    });
     try {
       const res = await auth.api.createUser({
         body: {
@@ -47,10 +110,20 @@ export class UsersService implements IUsersService {
         headers: await headers(),
       });
       const data = await UserSchema.parseAsync(res.user);
-      logOperation("success", { name: "UsersService.createUser", startTimeMs, data, context: { operationId } });
+      logOperation("success", {
+        name: "UsersService.createUser",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
       return data;
     } catch (error) {
-      logOperation("error", { name: "UsersService.createUser", startTimeMs, err: error, context: { operationId } });
+      logOperation("error", {
+        name: "UsersService.createUser",
+        startTimeMs,
+        err: error,
+        context: { operationId },
+      });
       mapBetterAuthError(error, "Failed to create user");
     }
   }
@@ -90,7 +163,9 @@ export class UsersService implements IUsersService {
     }
   }
 
-  async setUserRole(payload: TSetUserRoleValidationSchema): Promise<TUserSchema> {
+  async setUserRole(
+    payload: TSetUserRoleValidationSchema,
+  ): Promise<TUserSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
     logOperation("start", {
@@ -271,7 +346,9 @@ export class UsersService implements IUsersService {
     }
   }
 
-  async revokeUserSessions(payload: { userId: string }): Promise<{ success: boolean }> {
+  async revokeUserSessions(payload: {
+    userId: string;
+  }): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
     logOperation("start", {

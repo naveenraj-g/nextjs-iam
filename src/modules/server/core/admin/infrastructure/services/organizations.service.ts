@@ -18,7 +18,7 @@ import {
   TCreateOrganizationValidationSchema,
   TUpdateOrganizationValidationSchema,
   TDeleteOrganizationValidationSchema,
-  TAddMemberValidationSchema,
+  TAddMemberServiceSchema,
   TUpdateMemberRoleValidationSchema,
   TRemoveMemberValidationSchema,
   TCreateInvitationValidationSchema,
@@ -26,7 +26,7 @@ import {
   TCreateTeamValidationSchema,
   TUpdateTeamValidationSchema,
   TRemoveTeamValidationSchema,
-  TAddTeamMemberValidationSchema,
+  TAddTeamMemberServiceSchema,
   TRemoveTeamMemberValidationSchema,
   TOrgRoleSchema,
   TListOrgRolesResponseSchema,
@@ -421,7 +421,7 @@ export class OrganizationsService implements IOrganizationsService {
   }
 
   async addMember(
-    payload: TAddMemberValidationSchema,
+    payload: TAddMemberServiceSchema,
   ): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -720,8 +720,16 @@ export class OrganizationsService implements IOrganizationsService {
     }
   }
 
+  async isMemberInOrg(organizationId: string, userId: string): Promise<boolean> {
+    const member = await prisma.member.findFirst({
+      where: { organizationId, userId },
+      select: { id: true },
+    });
+    return member !== null;
+  }
+
   async addTeamMember(
-    payload: TAddTeamMemberValidationSchema,
+    payload: TAddTeamMemberServiceSchema,
   ): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
