@@ -3,13 +3,23 @@ import {
   TSigninResponseDtoSchema,
   TSignoutResponseDtoSchema,
   TSigninWithSocialResponseDtoSchema,
-  TSendEmailVerificationDtoSchema
+  TSendEmailVerificationDtoSchema,
+  TVerifyTwoFactorOTPDtoSchema,
+  TSendTwoFactorOTPDtoSchema,
+  TSendMagicLinkDtoSchema,
+  TSendResetPasswordDtoSchema,
+  TResetPasswordDtoSchema,
 } from "@/modules/entities/schemas/auth"
 import {
   TSendEmailVerificationPayload,
   TSigninEmailPayload,
   TSigninWithSocialPayload,
-  TSignupEmailPayload
+  TSignupEmailPayload,
+  TVerifyTwoFactorOTPPayload,
+  TSendTwoFactorOTPPayload,
+  TSendMagicLinkPayload,
+  TSendResetPasswordPayload,
+  TResetPasswordPayload,
 } from "@/modules/entities/types/auth"
 
 export interface IAuthService {
@@ -26,4 +36,19 @@ export interface IAuthService {
   sendEmailVerification(
     payload: TSendEmailVerificationPayload
   ): Promise<TSendEmailVerificationDtoSchema>
+  sendTwoFactorOTP(
+    payload: TSendTwoFactorOTPPayload
+  ): Promise<TSendTwoFactorOTPDtoSchema>
+  verifyTwoFactorOTP(
+    payload: TVerifyTwoFactorOTPPayload
+  ): Promise<TVerifyTwoFactorOTPDtoSchema>
+  sendMagicLink(
+    payload: TSendMagicLinkPayload
+  ): Promise<TSendMagicLinkDtoSchema>
+  sendResetPassword(
+    payload: TSendResetPasswordPayload
+  ): Promise<TSendResetPasswordDtoSchema>
+  resetPassword(
+    payload: TResetPasswordPayload
+  ): Promise<TResetPasswordDtoSchema>
 }

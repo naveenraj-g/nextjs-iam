@@ -25,15 +25,23 @@ import { Input } from "@/components/ui/input";
 import { Key, Loader2, Lock } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useServerAction } from "zsa-react";
-import { signinAction } from "@/modules/server/presentation/actions/auth";
+import { sendMagicLinkAction } from "@/modules/server/presentation/actions/auth";
 import { toast } from "sonner";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import OauthButton from "./OauthButton";
 import AuthSeparator from "./AuthSeparator";
 import { Link } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
-function SigninWithMagicLink() {
+interface ISigninWithMagicLinkProps {
+  /** OAuth authorize URL to resume after clicking the magic link */
+  redirect?: string;
+}
+
+function SigninWithMagicLink({ redirect }: ISigninWithMagicLinkProps) {
+  const [sent, setSent] = useState(false);
+
   const form = useForm<TForgetPasswordOrMagicLinkFormSchema>({
     resolver: zodResolver(ForgetPasswordOrMagicLinkFormSchema),
     defaultValues: {
@@ -42,22 +50,51 @@ function SigninWithMagicLink() {
   });
   const { isSubmitting } = form.formState;
 
-  const { execute } = useServerAction(signinAction, {
+  const { execute } = useServerAction(sendMagicLinkAction, {
     onSuccess: () => {
-      toast.success("Password reset link sent to the given email.");
+      setSent(true);
+      toast.success("Magic link sent! Check your email.");
     },
     onError: ({ err }) => {
       handleZSAError<TForgetPasswordOrMagicLinkFormSchema>({
         err,
         form,
-        fallbackMessage: "Failed to send reset link",
+        fallbackMessage: "Failed to send magic link. Please try again.",
       });
     },
   });
 
-  async function handleForgetPassword(
+  async function handleSendMagicLink(
     values: TForgetPasswordOrMagicLinkFormSchema,
-  ) {}
+  ) {
+    await execute({
+      payload: {
+        email: values.email,
+        // callbackURL is the OAuth authorize URL (or "/" for normal flow)
+        callbackURL: redirect ?? "/",
+      },
+    });
+  }
+
+  const queryString =
+    typeof window !== "undefined" ? window.location.search : "";
+
+  if (sent) {
+    return (
+      <Card className="max-w-sm w-full mx-auto">
+        <CardHeader>
+          <CardTitle>Check your email</CardTitle>
+          <CardDescription>
+            We&apos;ve sent a magic link to{" "}
+            <span className="font-medium text-foreground">
+              {form.getValues("email")}
+            </span>
+            . Click the link to sign in — it expires in 5 minutes.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <Card className="max-w-sm w-full mx-auto">
@@ -69,9 +106,8 @@ function SigninWithMagicLink() {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleForgetPassword)}>
+          <form onSubmit={form.handleSubmit(handleSendMagicLink)}>
             <FieldGroup>
-              {/* email */}
               <Controller
                 control={form.control}
                 name="email"
@@ -107,8 +143,8 @@ function SigninWithMagicLink() {
                   )}
                 </Button>
                 <Link
-                  href="/auth/sign-in"
-                  className={cn(buttonVariants({ variant: "secondary" }))}
+                  href={`/auth/sign-in${queryString}`}
+                  className={cn(buttonVariants({ variant: "secondary" }), "w-full")}
                 >
                   <Lock /> Sign in with Password
                 </Link>
@@ -140,7 +176,7 @@ function SigninWithMagicLink() {
       <CardFooter className="flex items-center gap-1.5 w-fit mx-auto text-sm text-muted-foreground">
         {"Don't have an account?"}
         <Link
-          href="/auth/sign-up"
+          href={`/auth/sign-up${queryString}`}
           className="text-foreground underline underline-offset-2"
         >
           Sign Up

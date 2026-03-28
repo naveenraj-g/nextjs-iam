@@ -9,8 +9,9 @@ export async function sendEmailVerificationUseCase(
   payload: TSendVerificationEmailValidationSchema
 ): Promise<TSendEmailVerificationDtoSchema> {
   const session = await getServerSession()
-  if (!session) throw new Error("Unauthenticated")
-  if (session.user.emailVerified) throw new Error("Email already verified!")
+  // Only block if there is an active session and email is already verified.
+  // When requireEmailVerification is enabled, no session exists after signup — allow resend.
+  if (session?.user.emailVerified) throw new Error("Email already verified!")
 
   // TODO: Implement redis to set and check cooldown for 30s
 

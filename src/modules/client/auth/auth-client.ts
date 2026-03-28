@@ -3,7 +3,9 @@ import {
   jwtClient,
   organizationClient,
   adminClient,
+  twoFactorClient,
   lastLoginMethodClient,
+  magicLinkClient,
 } from "better-auth/client/plugins";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { agentAuthClient } from "@better-auth/agent-auth/client";
@@ -15,6 +17,10 @@ export const authClient = createAuthClient({
     jwtClient(),
     organizationClient(),
     adminClient(),
+    twoFactorClient({
+      twoFactorPage: "/auth/two-factor",
+    }),
+    magicLinkClient(),
     oauthProviderClient(),
     agentAuthClient(),
     lastLoginMethodClient(),

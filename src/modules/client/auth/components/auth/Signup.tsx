@@ -74,18 +74,33 @@ function Signup() {
   }
 
   async function handleSignup(values: TSignupFormSchema) {
-    const params = window.location.search;
+    const searchParams = new URLSearchParams(window.location.search);
+    const isOAuthFlow =
+      searchParams.has("client_id") && searchParams.has("redirect_uri");
+
     await execute({
       payload: values,
       transportOptions: {
-        shouldRedirect: params ? true : undefined,
-        url: params ? `/api/auth/oauth2/authorize${params}` : undefined,
+        shouldRedirect: isOAuthFlow ? true : undefined,
+        url: isOAuthFlow
+          ? `/api/auth/oauth2/authorize?${searchParams.toString()}`
+          : undefined,
       },
     });
   }
 
   const queryString =
     typeof window !== "undefined" ? window.location.search : "";
+
+  const magicLinkHref = (() => {
+    if (typeof window === "undefined") return "/auth/magic-link";
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.has("client_id") && sp.has("redirect_uri")) {
+      const oauthUrl = `/api/auth/oauth2/authorize?${sp.toString()}`;
+      return `/auth/magic-link?redirect=${encodeURIComponent(oauthUrl)}`;
+    }
+    return "/auth/magic-link";
+  })();
 
   return (
     <Card className="max-w-sm w-full mx-auto">
@@ -212,7 +227,7 @@ function Signup() {
                     )}
                   </Button>
                   <Link
-                    href="/auth/magic-link"
+                    href={magicLinkHref}
                     className={cn(
                       buttonVariants({ variant: "secondary" }),
                       "w-full",

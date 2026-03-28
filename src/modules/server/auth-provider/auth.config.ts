@@ -16,6 +16,7 @@ import {
   username,
   lastLoginMethod,
   createAccessControl,
+  magicLink,
 } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
 // import { agentAuth } from "@better-auth/agent-auth";
@@ -26,6 +27,14 @@ import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
 import { prisma } from "../../../../prisma/db";
 import { getEmailVerificationTemplate } from "@/modules/shared/email-templates/auth-email.templates";
 import { sendAuthEmail } from "@/modules/server/utils/sendAuthEmail";
+import {
+  getOAuthClientOrigins,
+  validAudiencesRef,
+} from "./oauth-client-origins";
+
+// Warm the cache at module load so trustedOrigins and validAudiences are ready
+// before the first request. Does not block module initialization.
+void getOAuthClientOrigins();
 
 const statement = {
   ...defaultStatements,
@@ -77,7 +86,9 @@ export const authConfig = {
     joins: true,
   },
 
-  trustedOrigins: ["http://localhost:3000"],
+  // Dynamically load redirect URI origins from registered OAuth clients.
+  // Better Auth calls this async function per-request (with TTL cache).
+  trustedOrigins: async () => getOAuthClientOrigins(),
 
   emailAndPassword: {
     enabled: true,
@@ -155,14 +166,40 @@ export const authConfig = {
 
   hooks: {
     before: createAuthMiddleware(async (ctx) => {
+      const token = ctx.getCookie(ctx.context.authCookies.sessionToken.name);
+
+      // ── OAuth authorize: block authenticated but unverified users ───────────
+      if (ctx.path === "/oauth2/authorize") {
+        // Not authenticated — Better Auth redirects to loginPage automatically
+        if (!token) return;
+
+        const [sessionId] = token.split(".");
+        const session =
+          await ctx.context.internalAdapter.findSession(sessionId);
+
+        if (session && !session.user.emailVerified) {
+          // Preserve the full OAuth query string so the flow can resume after verification
+          const requestUrl = new URL(ctx.request.url);
+          const authorizeRelativeUrl = `/api/auth/oauth2/authorize?${requestUrl.searchParams.toString()}`;
+          const appUrl = process.env.BETTER_AUTH_URL!;
+          const location = `${appUrl}/auth/email-verification?email=${encodeURIComponent(session.user.email)}&redirect=${encodeURIComponent(authorizeRelativeUrl)}`;
+
+          return new Response(null, {
+            status: 302,
+            headers: { Location: location },
+          });
+        }
+
+        return;
+      }
+
+      // ── Admin-only paths ─────────────────────────────────────────────────────
       const protectedPaths = new Set([
         "/oauth2/create-client",
         "/oauth2/register",
       ]);
 
       if (!protectedPaths.has(ctx.path)) return;
-
-      const token = ctx.getCookie(ctx.context.authCookies.sessionToken.name);
 
       if (!token)
         throw new APIError("UNAUTHORIZED", {
@@ -265,10 +302,23 @@ export const authConfig = {
         return user.role === "superadmin" || user.role === "admin";
       },
 
-      validAudiences: ["http://localhost:3000"],
+      // Mutable array reference: Better Auth reads opts.validAudiences on
+      // every token/authorize request, so mutating this array in-place
+      // (done by refreshOAuthClientOrigins) makes it effectively dynamic.
+      validAudiences: validAudiencesRef,
     }),
 
     lastLoginMethod(),
+
+    magicLink({
+      sendMagicLink: async ({ email, url }) => {
+        void sendAuthEmail({
+          to: email,
+          subject: "Your magic link",
+          html: `<a href="${url}">Sign in with magic link</a>`,
+        });
+      },
+    }),
 
     apiKey({ defaultPrefix: "drgodly_" }),
 

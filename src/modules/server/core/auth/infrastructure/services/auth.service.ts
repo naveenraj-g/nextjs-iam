@@ -10,6 +10,16 @@ import {
   TSigninWithSocialResponseDtoSchema,
   SendEmailVerificationDtoSchema,
   TSendEmailVerificationDtoSchema,
+  VerifyTwoFactorOTPDtoSchema,
+  TVerifyTwoFactorOTPDtoSchema,
+  SendTwoFactorOTPDtoSchema,
+  TSendTwoFactorOTPDtoSchema,
+  SendMagicLinkDtoSchema,
+  TSendMagicLinkDtoSchema,
+  SendResetPasswordDtoSchema,
+  TSendResetPasswordDtoSchema,
+  ResetPasswordDtoSchema,
+  TResetPasswordDtoSchema,
 } from "@/modules/entities/schemas/auth";
 import { auth } from "@/modules/server/auth-provider/auth";
 import { IAuthService } from "../../domain/interfaces/auth.service.interface";
@@ -20,6 +30,11 @@ import {
   TSigninEmailPayload,
   TSigninWithSocialPayload,
   TSignupEmailPayload,
+  TVerifyTwoFactorOTPPayload,
+  TSendTwoFactorOTPPayload,
+  TSendMagicLinkPayload,
+  TSendResetPasswordPayload,
+  TResetPasswordPayload,
 } from "@/modules/entities/types/auth";
 import { logOperation } from "@/modules/server/config/logger/log-operation";
 
@@ -29,7 +44,13 @@ export class AuthService implements IAuthService {
   ): Promise<TSignupResponseDtoSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
-    logOperation("start", { name: "AuthService.signUpWithEmail", startTimeMs, context: { operationId, email: payload.email } });
+
+    logOperation("start", {
+      name: "AuthService.signUpWithEmail",
+      startTimeMs,
+      context: { operationId, email: payload.email },
+    });
+
     try {
       const res = await auth.api.signUpEmail({
         body: {
@@ -39,11 +60,25 @@ export class AuthService implements IAuthService {
           callbackURL: "/",
         },
       });
+
       const data = await SignupResponseDtoSchema.parseAsync(res);
-      logOperation("success", { name: "AuthService.signUpWithEmail", startTimeMs, data, context: { operationId, email: payload.email } });
+
+      logOperation("success", {
+        name: "AuthService.signUpWithEmail",
+        startTimeMs,
+        data,
+        context: { operationId, email: payload.email },
+      });
+
       return data;
     } catch (error) {
-      logOperation("error", { name: "AuthService.signUpWithEmail", startTimeMs, err: error, context: { operationId, email: payload.email } });
+      logOperation("error", {
+        name: "AuthService.signUpWithEmail",
+        startTimeMs,
+        err: error,
+        context: { operationId, email: payload.email },
+      });
+
       mapBetterAuthError(error, "Failed to sign up user");
     }
   }
@@ -53,7 +88,13 @@ export class AuthService implements IAuthService {
   ): Promise<TSigninResponseDtoSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
-    logOperation("start", { name: "AuthService.signInWithEmail", startTimeMs, context: { operationId, email: payload.email } });
+
+    logOperation("start", {
+      name: "AuthService.signInWithEmail",
+      startTimeMs,
+      context: { operationId, email: payload.email },
+    });
+
     try {
       const res = await auth.api.signInEmail({
         body: {
@@ -63,11 +104,25 @@ export class AuthService implements IAuthService {
           callbackURL: "/",
         },
       });
+
       const data = await SigninResponseDtoSchema.parseAsync(res);
-      logOperation("success", { name: "AuthService.signInWithEmail", startTimeMs, data, context: { operationId, email: payload.email } });
+
+      logOperation("success", {
+        name: "AuthService.signInWithEmail",
+        startTimeMs,
+        data,
+        context: { operationId, email: payload.email },
+      });
+
       return data;
     } catch (error) {
-      logOperation("error", { name: "AuthService.signInWithEmail", startTimeMs, err: error, context: { operationId, email: payload.email } });
+      logOperation("error", {
+        name: "AuthService.signInWithEmail",
+        startTimeMs,
+        err: error,
+        context: { operationId, email: payload.email },
+      });
+
       mapBetterAuthError(error, "Failed to sign in user");
     }
   }
@@ -77,22 +132,35 @@ export class AuthService implements IAuthService {
   ): Promise<TSigninWithSocialResponseDtoSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
+
     logOperation("start", {
       name: "AuthService.signInWithSocial",
       startTimeMs,
       context: { operationId, provider: payload.provider },
     });
+
     try {
+      const isValidCallbackURL = (url: string | undefined): boolean => {
+        if (!url) return true;
+        return url === "/" || url.startsWith("/api/auth/oauth2/authorize?");
+      };
+      const safeCallbackURL = isValidCallbackURL(payload.callbackURL)
+        ? (payload.callbackURL ?? "/")
+        : "/";
+
       const res = await auth.api.signInSocial({
-        body: { provider: payload.provider, callbackURL: "/" },
+        body: { provider: payload.provider, callbackURL: safeCallbackURL },
       });
+
       const data = await SigninWithSocialResponseDtoSchema.parseAsync(res);
+
       logOperation("success", {
         name: "AuthService.signInWithSocial",
         startTimeMs,
         data,
         context: { operationId, provider: payload.provider },
       });
+
       return data;
     } catch (error) {
       logOperation("error", {
@@ -101,6 +169,7 @@ export class AuthService implements IAuthService {
         err: error,
         context: { operationId, provider: payload.provider },
       });
+
       mapBetterAuthError(error, "Failed to sign in user");
     }
   }
@@ -108,17 +177,37 @@ export class AuthService implements IAuthService {
   async signOut(): Promise<TSignoutResponseDtoSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
-    logOperation("start", { name: "AuthService.signOut", startTimeMs, context: { operationId } });
+
+    logOperation("start", {
+      name: "AuthService.signOut",
+      startTimeMs,
+      context: { operationId },
+    });
+
     try {
       const res = await auth.api.signOut({ headers: await headers() });
+
       const data = await SignoutResponseDtoSchema.parseAsync({
         ...res,
         url: res.success ? "/" : null,
       });
-      logOperation("success", { name: "AuthService.signOut", startTimeMs, data, context: { operationId } });
+
+      logOperation("success", {
+        name: "AuthService.signOut",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
+
       return data;
     } catch (error) {
-      logOperation("error", { name: "AuthService.signOut", startTimeMs, err: error, context: { operationId } });
+      logOperation("error", {
+        name: "AuthService.signOut",
+        startTimeMs,
+        err: error,
+        context: { operationId },
+      });
+
       mapBetterAuthError(error, "Failed to sign out user");
     }
   }
@@ -128,17 +217,275 @@ export class AuthService implements IAuthService {
   ): Promise<TSendEmailVerificationDtoSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
-    logOperation("start", { name: "AuthService.sendEmailVerification", startTimeMs, context: { operationId, email: payload.email } });
+
+    logOperation("start", {
+      name: "AuthService.sendEmailVerification",
+      startTimeMs,
+      context: { operationId, email: payload.email },
+    });
+
     try {
+      // Only allow "/" or our own OAuth authorize path to prevent open redirect
+      const isValidCallbackURL = (url: string | undefined): boolean => {
+        if (!url) return true;
+        return url === "/" || url.startsWith("/api/auth/oauth2/authorize?");
+      };
+      const safeCallbackURL = isValidCallbackURL(payload.callbackURL)
+        ? (payload.callbackURL ?? "/")
+        : "/";
+
       const res = await auth.api.sendVerificationEmail({
-        body: { email: payload.email, callbackURL: "/" },
+        body: { email: payload.email, callbackURL: safeCallbackURL },
       });
-      const data = await SendEmailVerificationDtoSchema.parseAsync({ success: res.status });
-      logOperation("success", { name: "AuthService.sendEmailVerification", startTimeMs, data, context: { operationId, email: payload.email } });
+
+      const data = await SendEmailVerificationDtoSchema.parseAsync({
+        success: res.status,
+      });
+
+      logOperation("success", {
+        name: "AuthService.sendEmailVerification",
+        startTimeMs,
+        data,
+        context: { operationId, email: payload.email },
+      });
+
       return data;
     } catch (error) {
-      logOperation("error", { name: "AuthService.sendEmailVerification", startTimeMs, err: error, context: { operationId, email: payload.email } });
+      logOperation("error", {
+        name: "AuthService.sendEmailVerification",
+        startTimeMs,
+        err: error,
+        context: { operationId, email: payload.email },
+      });
+
       mapBetterAuthError(error, "Failed to send verification email");
+    }
+  }
+
+  async sendTwoFactorOTP(
+    payload: TSendTwoFactorOTPPayload,
+  ): Promise<TSendTwoFactorOTPDtoSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+
+    logOperation("start", {
+      name: "AuthService.sendTwoFactorOTP",
+      startTimeMs,
+      context: { operationId },
+    });
+
+    try {
+      const res = await auth.api.sendTwoFactorOTP({
+        body: { trustDevice: payload.trustDevice },
+        headers: await headers(),
+      });
+
+      const data = await SendTwoFactorOTPDtoSchema.parseAsync({
+        status: res.status,
+      });
+
+      logOperation("success", {
+        name: "AuthService.sendTwoFactorOTP",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
+
+      return data;
+    } catch (error) {
+      logOperation("error", {
+        name: "AuthService.sendTwoFactorOTP",
+        startTimeMs,
+        err: error,
+        context: { operationId },
+      });
+
+      mapBetterAuthError(error, "Failed to send two-factor OTP");
+    }
+  }
+
+  async verifyTwoFactorOTP(
+    payload: TVerifyTwoFactorOTPPayload,
+  ): Promise<TVerifyTwoFactorOTPDtoSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+
+    logOperation("start", {
+      name: "AuthService.verifyTwoFactorOTP",
+      startTimeMs,
+      context: { operationId },
+    });
+
+    try {
+      const res = await auth.api.verifyTwoFactorOTP({
+        body: { code: payload.code, trustDevice: payload.trustDevice },
+        headers: await headers(),
+      });
+
+      const data = await VerifyTwoFactorOTPDtoSchema.parseAsync(res);
+
+      logOperation("success", {
+        name: "AuthService.verifyTwoFactorOTP",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
+
+      return data;
+    } catch (error) {
+      logOperation("error", {
+        name: "AuthService.verifyTwoFactorOTP",
+        startTimeMs,
+        err: error,
+        context: { operationId },
+      });
+
+      mapBetterAuthError(error, "Failed to verify two-factor OTP");
+    }
+  }
+
+  async sendMagicLink(
+    payload: TSendMagicLinkPayload,
+  ): Promise<TSendMagicLinkDtoSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+
+    logOperation("start", {
+      name: "AuthService.sendMagicLink",
+      startTimeMs,
+      context: { operationId, email: payload.email },
+    });
+
+    try {
+      // Only allow "/" or our own OAuth authorize path to prevent open redirect
+      const isValidCallbackURL = (url: string | undefined): boolean => {
+        if (!url) return true;
+        return url === "/" || url.startsWith("/api/auth/oauth2/authorize?");
+      };
+      const safeCallbackURL = isValidCallbackURL(payload.callbackURL)
+        ? (payload.callbackURL ?? "/")
+        : "/";
+
+      const res = await auth.api.signInMagicLink({
+        body: { email: payload.email, callbackURL: safeCallbackURL },
+        headers: await headers(),
+      });
+
+      const data = await SendMagicLinkDtoSchema.parseAsync({
+        success: res.status,
+      });
+
+      logOperation("success", {
+        name: "AuthService.sendMagicLink",
+        startTimeMs,
+        data,
+        context: { operationId, email: payload.email },
+      });
+
+      return data;
+    } catch (error) {
+      logOperation("error", {
+        name: "AuthService.sendMagicLink",
+        startTimeMs,
+        err: error,
+        context: { operationId, email: payload.email },
+      });
+
+      mapBetterAuthError(error, "Failed to send magic link");
+    }
+  }
+
+  async sendResetPassword(
+    payload: TSendResetPasswordPayload,
+  ): Promise<TSendResetPasswordDtoSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+
+    logOperation("start", {
+      name: "AuthService.sendResetPassword",
+      startTimeMs,
+      context: { operationId, email: payload.email },
+    });
+
+    try {
+      // Only allow "/" or our own OAuth authorize path to prevent open redirect
+      const isValidRedirect = (url: string | undefined): boolean => {
+        if (!url) return true;
+        return url === "/" || url.startsWith("/api/auth/oauth2/authorize?");
+      };
+      const safeRedirect = isValidRedirect(payload.redirect)
+        ? payload.redirect
+        : undefined;
+
+      const resetBase = `${process.env.BETTER_AUTH_URL}/auth/reset-password`;
+      const redirectTo = safeRedirect
+        ? `${resetBase}?redirect=${encodeURIComponent(safeRedirect)}`
+        : resetBase;
+
+      await auth.api.requestPasswordReset({
+        body: { email: payload.email, redirectTo },
+      });
+
+      const data = await SendResetPasswordDtoSchema.parseAsync({
+        success: true,
+      });
+
+      logOperation("success", {
+        name: "AuthService.sendResetPassword",
+        startTimeMs,
+        data,
+        context: { operationId, email: payload.email },
+      });
+
+      return data;
+    } catch (error) {
+      logOperation("error", {
+        name: "AuthService.sendResetPassword",
+        startTimeMs,
+        err: error,
+        context: { operationId, email: payload.email },
+      });
+
+      mapBetterAuthError(error, "Failed to send password reset email");
+    }
+  }
+
+  async resetPassword(
+    payload: TResetPasswordPayload,
+  ): Promise<TResetPasswordDtoSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+
+    logOperation("start", {
+      name: "AuthService.resetPassword",
+      startTimeMs,
+      context: { operationId },
+    });
+
+    try {
+      await auth.api.resetPassword({
+        body: { newPassword: payload.newPassword, token: payload.token },
+      });
+
+      const data = await ResetPasswordDtoSchema.parseAsync({ success: true });
+
+      logOperation("success", {
+        name: "AuthService.resetPassword",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
+
+      return data;
+    } catch (error) {
+      logOperation("error", {
+        name: "AuthService.resetPassword",
+        startTimeMs,
+        err: error,
+        context: { operationId },
+      });
+
+      mapBetterAuthError(error, "Failed to reset password");
     }
   }
 }

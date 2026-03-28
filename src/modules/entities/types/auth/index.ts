@@ -21,8 +21,34 @@ export type TSigninEmailPayload = Pick<
 
 export type TSigninWithSocialPayload = {
   provider: TSocialProviders
+  callbackURL?: string
 }
 
 export type TSendEmailVerificationPayload = {
   email: string
+  callbackURL?: string
+}
+
+export type TVerifyTwoFactorOTPPayload = {
+  code: string
+  trustDevice?: boolean
+}
+
+export type TSendTwoFactorOTPPayload = {
+  trustDevice?: boolean
+}
+
+export type TSendMagicLinkPayload = {
+  email: string
+  callbackURL?: string
+}
+
+export type TSendResetPasswordPayload = {
+  email: string
+  redirect?: string
+}
+
+export type TResetPasswordPayload = {
+  newPassword: string
+  token: string
 }

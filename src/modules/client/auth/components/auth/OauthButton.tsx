@@ -46,7 +46,15 @@ const OauthButton = ({
           className,
         )}
         onClick={async () => {
-          await execute({ provider: oauthName });
+          const sp = new URLSearchParams(window.location.search);
+          const isOAuthFlow =
+            sp.has("client_id") && sp.has("redirect_uri");
+          await execute({
+            provider: oauthName,
+            callbackURL: isOAuthFlow
+              ? `/api/auth/oauth2/authorize?${sp.toString()}`
+              : undefined,
+          });
         }}
       >
         <span className="pointer-events-none">

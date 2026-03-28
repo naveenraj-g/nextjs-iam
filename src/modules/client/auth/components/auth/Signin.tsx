@@ -82,18 +82,47 @@ function Signin() {
   }
 
   async function handleSignin(values: TSigninFormSchema) {
-    const params = window.location.search;
+    const searchParams = new URLSearchParams(window.location.search);
+
+    // Detect OAuth Authorization Code flow
+    const isOAuthFlow =
+      searchParams.has("client_id") && searchParams.has("redirect_uri");
+
+    const shouldRedirect = isOAuthFlow;
+
     await execute({
       payload: values,
       transportOptions: {
-        shouldRedirect: params ? true : undefined,
-        url: params ? `/api/auth/oauth2/authorize${params}` : undefined,
+        shouldRedirect: shouldRedirect ? true : undefined,
+        url: shouldRedirect
+          ? `/api/auth/oauth2/authorize?${searchParams.toString()}`
+          : undefined,
       },
     });
   }
 
   const queryString =
     typeof window !== "undefined" ? window.location.search : "";
+
+  const forgetPasswordHref = (() => {
+    if (typeof window === "undefined") return "/auth/forget-password";
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.has("client_id") && sp.has("redirect_uri")) {
+      const oauthUrl = `/api/auth/oauth2/authorize?${sp.toString()}`;
+      return `/auth/forget-password?redirect=${encodeURIComponent(oauthUrl)}`;
+    }
+    return "/auth/forget-password";
+  })();
+
+  const magicLinkHref = (() => {
+    if (typeof window === "undefined") return "/auth/magic-link";
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.has("client_id") && sp.has("redirect_uri")) {
+      const oauthUrl = `/api/auth/oauth2/authorize?${sp.toString()}`;
+      return `/auth/magic-link?redirect=${encodeURIComponent(oauthUrl)}`;
+    }
+    return "/auth/magic-link";
+  })();
 
   return (
     <Card className="max-w-sm w-full mx-auto">
@@ -137,7 +166,7 @@ function Signin() {
                       <FieldLabel htmlFor="password">Password</FieldLabel>
                       <FieldLabel asChild>
                         <Link
-                          href="/auth/forget-password"
+                          href={forgetPasswordHref}
                           className="hover:underline"
                         >
                           Forgot your password?
@@ -217,7 +246,7 @@ function Signin() {
                 <div className="relative">
                   {lastMethod === "magic-link" && <LastUsedBadge />}
                   <Link
-                    href="/auth/magic-link"
+                    href={magicLinkHref}
                     className={cn(
                       buttonVariants({ variant: "secondary" }),
                       "w-full",

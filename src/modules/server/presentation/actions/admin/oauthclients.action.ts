@@ -20,6 +20,7 @@ import {
   TDeleteOAuthClientControllerOutput,
   TRotateClientSecretControllerOutput,
 } from "@/modules/server/core/admin/interface-adapters/controllers/oauthclient";
+import { refreshOAuthClientOrigins } from "@/modules/server/auth-provider/oauth-client-origins";
 
 export const getOAuthClientsAction = createServerAction().handler(async () => {
   return await runWithTransport<TGetOAuthClientsControllerOutput>(async () => {
@@ -34,6 +35,7 @@ export const createOAuthClientAction = createServerAction()
     return await runWithTransport<TCreateOAuthClientControllerOutput>(
       async () => {
         const data = await createOAuthClientController(input.payload);
+        void refreshOAuthClientOrigins();
         return { result: data, transport: input.transportOptions };
       },
     );
@@ -45,6 +47,7 @@ export const updateOAuthClientAction = createServerAction()
     return await runWithTransport<TUpdateOAuthClientControllerOutput>(
       async () => {
         const data = await updateOAuthClientController(input.payload);
+        void refreshOAuthClientOrigins();
         return { result: data, transport: input.transportOptions };
       },
     );
@@ -56,6 +59,7 @@ export const deleteOAuthClientAction = createServerAction()
     return await runWithTransport<TDeleteOAuthClientControllerOutput>(
       async () => {
         const data = await deleteOAuthClientController(input.payload);
+        void refreshOAuthClientOrigins();
         return { result: data, transport: input.transportOptions };
       },
     );

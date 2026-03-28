@@ -17,9 +17,10 @@ import { handleZSAError } from "@/modules/client/shared/error/handleZSAError"
 
 interface IEmailVerificationProps {
   email: string
+  redirect?: string
 }
 
-function EmailVerification({ email }: IEmailVerificationProps) {
+function EmailVerification({ email, redirect }: IEmailVerificationProps) {
   const { restart, seconds } = useCountdown(30)
 
   const { execute, isPending } = useServerAction(sendEmailVerificationAction, {
@@ -45,7 +46,7 @@ function EmailVerification({ email }: IEmailVerificationProps) {
       return
     }
 
-    execute({ payload: { email } })
+    execute({ payload: { email, callbackURL: redirect } })
   }
 
   return (

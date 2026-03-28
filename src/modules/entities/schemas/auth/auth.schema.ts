@@ -47,14 +47,16 @@ export const SigninValidationSchema = BaseSigninOrSignupSchema.pick({
 export type TSigninValidationSchema = z.infer<typeof SigninValidationSchema>
 
 export const SigninWithSocialValidationSchema = z.object({
-  provider: ZodSocialProviders
+  provider: ZodSocialProviders,
+  callbackURL: z.string().optional(),
 })
 export type TSigninWithSocialValidationSchema = z.infer<
   typeof SigninWithSocialValidationSchema
 >
 
 export const SendVerificationEmailValidationSchema = z.object({
-  email: z.string().email()
+  email: z.string().email(),
+  callbackURL: z.string().optional(),
 })
 export type TSendVerificationEmailValidationSchema = z.infer<
   typeof SendVerificationEmailValidationSchema
@@ -103,12 +105,18 @@ export const SignupResponseDtoSchema = z.union([
 ])
 export type TSignupResponseDtoSchema = z.infer<typeof SignupResponseDtoSchema>
 
-export const SigninResponseDtoSchema = z.object({
-  redirect: z.boolean(),
-  token: z.string(),
-  url: z.string().optional(),
-  user: UserSchema
-})
+// When 2FA is enabled the after-hook replaces the normal sign-in response
+export const SigninResponseDtoSchema = z.union([
+  z.object({
+    redirect: z.boolean(),
+    token: z.string(),
+    url: z.string().optional(),
+    user: UserSchema,
+  }),
+  z.object({
+    twoFactorRedirect: z.literal(true),
+  }),
+])
 export type TSigninResponseDtoSchema = z.infer<typeof SigninResponseDtoSchema>
 
 export const SigninWithSocialResponseDtoSchema = z.union([
@@ -139,3 +147,124 @@ export const SendEmailVerificationDtoSchema = z.object({
 export type TSendEmailVerificationDtoSchema = z.infer<
   typeof SendEmailVerificationDtoSchema
 >
+
+// ------------------------------------------------------- //
+
+// Two-Factor Authentication schemas
+
+export const VerifyTwoFactorOTPValidationSchema = z.object({
+  code: z.string().min(6).max(6),
+  trustDevice: z.boolean().optional(),
+})
+export type TVerifyTwoFactorOTPValidationSchema = z.infer<
+  typeof VerifyTwoFactorOTPValidationSchema
+>
+
+export const VerifyTwoFactorOTPActionSchema = z.object({
+  payload: VerifyTwoFactorOTPValidationSchema,
+  transportOptions: TransportOptionsSchema.optional(),
+})
+export type TVerifyTwoFactorOTPActionSchema = z.infer<
+  typeof VerifyTwoFactorOTPActionSchema
+>
+
+export const SendTwoFactorOTPActionSchema = z.object({
+  transportOptions: TransportOptionsSchema.optional(),
+})
+export type TSendTwoFactorOTPActionSchema = z.infer<
+  typeof SendTwoFactorOTPActionSchema
+>
+
+export const VerifyTwoFactorOTPDtoSchema = z.object({
+  token: z.string(),
+})
+export type TVerifyTwoFactorOTPDtoSchema = z.infer<
+  typeof VerifyTwoFactorOTPDtoSchema
+>
+
+export const SendTwoFactorOTPDtoSchema = z.object({
+  status: z.boolean(),
+})
+export type TSendTwoFactorOTPDtoSchema = z.infer<
+  typeof SendTwoFactorOTPDtoSchema
+>
+
+// ------------------------------------------------------- //
+
+// Magic link schemas
+
+export const SendMagicLinkValidationSchema = z.object({
+  email: z.string().email(),
+  callbackURL: z.string().optional(),
+})
+export type TSendMagicLinkValidationSchema = z.infer<
+  typeof SendMagicLinkValidationSchema
+>
+
+export const SendMagicLinkActionSchema = z.object({
+  payload: SendMagicLinkValidationSchema,
+  transportOptions: TransportOptionsSchema.optional(),
+})
+export type TSendMagicLinkActionSchema = z.infer<
+  typeof SendMagicLinkActionSchema
+>
+
+export const SendMagicLinkDtoSchema = z.object({
+  success: z.boolean(),
+})
+export type TSendMagicLinkDtoSchema = z.infer<typeof SendMagicLinkDtoSchema>
+
+// ------------------------------------------------------- //
+
+// Password reset schemas
+
+export const SendResetPasswordValidationSchema = z.object({
+  email: z.string().email(),
+  redirect: z.string().optional(),
+})
+export type TSendResetPasswordValidationSchema = z.infer<
+  typeof SendResetPasswordValidationSchema
+>
+
+export const SendResetPasswordActionSchema = z.object({
+  payload: SendResetPasswordValidationSchema,
+  transportOptions: TransportOptionsSchema.optional(),
+})
+export type TSendResetPasswordActionSchema = z.infer<
+  typeof SendResetPasswordActionSchema
+>
+
+export const SendResetPasswordDtoSchema = z.object({
+  success: z.boolean(),
+})
+export type TSendResetPasswordDtoSchema = z.infer<
+  typeof SendResetPasswordDtoSchema
+>
+
+export const ResetPasswordValidationSchema = z
+  .object({
+    newPassword: z.string().min(8),
+    confirmPassword: z.string().min(8),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+export type TResetPasswordValidationSchema = z.infer<
+  typeof ResetPasswordValidationSchema
+>
+
+export const ResetPasswordActionSchema = z.object({
+  payload: ResetPasswordValidationSchema,
+  token: z.string(),
+  redirect: z.string().optional(),
+  transportOptions: TransportOptionsSchema.optional(),
+})
+export type TResetPasswordActionSchema = z.infer<
+  typeof ResetPasswordActionSchema
+>
+
+export const ResetPasswordDtoSchema = z.object({
+  success: z.boolean(),
+})
+export type TResetPasswordDtoSchema = z.infer<typeof ResetPasswordDtoSchema>
