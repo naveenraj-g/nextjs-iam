@@ -22,6 +22,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useServerAction } from "zsa-react";
 import {
   verifyTwoFactorOTPAction,
@@ -42,7 +43,8 @@ interface ITwoFactorProps {
 }
 
 function TwoFactor({ redirect }: ITwoFactorProps) {
-  const { restart, seconds } = useCountdown(30);
+  const { restart, seconds } = useCountdown(0);
+  const hasSentRef = useRef(false);
 
   const form = useForm<TVerifyTwoFactorOTPValidationSchema>({
     resolver: zodResolver(VerifyTwoFactorOTPValidationSchema),
@@ -80,6 +82,13 @@ function TwoFactor({ redirect }: ITwoFactorProps) {
       },
     },
   );
+
+  // Auto-send OTP on mount so the user receives it immediately without clicking
+  useEffect(() => {
+    if (hasSentRef.current) return;
+    hasSentRef.current = true;
+    executeSend({});
+  }, [executeSend]);
 
   async function handleVerify(values: TVerifyTwoFactorOTPValidationSchema) {
     await executeVerify({
@@ -164,7 +173,7 @@ function TwoFactor({ redirect }: ITwoFactorProps) {
                 ) : seconds > 0 ? (
                   `Resend Code (${seconds}s)`
                 ) : (
-                  "Send Code"
+                  "Resend Code"
                 )}
               </Button>
             </FieldGroup>

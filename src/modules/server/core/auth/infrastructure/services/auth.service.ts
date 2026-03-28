@@ -366,8 +366,18 @@ export class AuthService implements IAuthService {
         ? (payload.callbackURL ?? "/")
         : "/";
 
+      // Better Auth's magic-link verify endpoint double-decodes callbackURL via
+      // originCheck middleware. An OAuth authorize path (containing `:` after
+      // double-decode) fails the relative-URL regex. Route through a relay page
+      // that base64url-decodes and issues a server-side redirect instead.
+      const finalCallbackURL = safeCallbackURL.startsWith(
+        "/api/auth/oauth2/authorize?",
+      )
+        ? `${process.env.BETTER_AUTH_URL!}/auth/magic-link/relay?redirect=${Buffer.from(safeCallbackURL).toString("base64url")}`
+        : safeCallbackURL;
+
       const res = await auth.api.signInMagicLink({
-        body: { email: payload.email, callbackURL: safeCallbackURL },
+        body: { email: payload.email, callbackURL: finalCallbackURL },
         headers: await headers(),
       });
 
