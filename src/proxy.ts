@@ -4,7 +4,53 @@ import { routing } from "./i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
-const allowedOrigin = process.env.ALLOWED_ORIGIN!;
+// Matches /[locale]/admin and /[locale]/admin/* — locale segment is one or more non-slash chars
+const ADMIN_PATTERN = /^\/[^/]+\/admin(\/|$)/;
+
+// ---------------------------------------------------------------------------
+// Dynamic CORS origins — sourced from OAuth client redirect URIs in the DB.
+// Middleware runs in Edge Runtime (no Prisma), so we fetch from an internal
+// API route and cache the result for 60 s (matching oauth-client-origins TTL).
+// ---------------------------------------------------------------------------
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET;
+const CORS_TTL_MS = 60_000;
+
+let corsCache: { origins: Set<string>; ts: number } | null = null;
+
+async function getAllowedOrigins(base: string): Promise<Set<string>> {
+  if (corsCache && Date.now() - corsCache.ts < CORS_TTL_MS) {
+    return corsCache.origins;
+  }
+
+  try {
+    const headers: Record<string, string> = {};
+    if (INTERNAL_SECRET) headers["x-internal-secret"] = INTERNAL_SECRET;
+
+    const res = await fetch(`${base}/api/internal/cors-origins`, {
+      headers,
+      cache: "no-store",
+    });
+
+    if (res.ok) {
+      const { origins } = (await res.json()) as { origins: string[] };
+      corsCache = { origins: new Set(origins), ts: Date.now() };
+      return corsCache.origins;
+    }
+  } catch {
+    // If the fetch fails, fall back to whatever is cached (or empty set)
+  }
+
+  return corsCache?.origins ?? new Set();
+}
+
+function buildCorsHeaders(origin: string): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+}
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -15,39 +61,64 @@ export async function proxy(req: NextRequest) {
    * =========================
    */
   if (pathname.startsWith("/api")) {
-    // Preflight
-    if (req.method === "OPTIONS") {
-      return new NextResponse(null, {
-        status: 200,
-        headers: {
-          "Access-Control-Allow-Origin": allowedOrigin,
-          "Access-Control-Allow-Credentials": "true",
-          "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-      });
+    const requestOrigin = req.headers.get("origin");
+
+    if (requestOrigin) {
+      const allowedOrigins = await getAllowedOrigins(req.nextUrl.origin);
+
+      if (allowedOrigins.has(requestOrigin)) {
+        // Preflight
+        if (req.method === "OPTIONS") {
+          return new NextResponse(null, {
+            status: 200,
+            headers: buildCorsHeaders(requestOrigin),
+          });
+        }
+
+        // Normal API request
+        const res = NextResponse.next();
+        for (const [k, v] of Object.entries(buildCorsHeaders(requestOrigin))) {
+          res.headers.set(k, v);
+        }
+        return res;
+      }
     }
 
-    // Normal API request
-    const res = NextResponse.next();
-
-    res.headers.set("Access-Control-Allow-Origin", allowedOrigin);
-    res.headers.set("Access-Control-Allow-Credentials", "true");
-    res.headers.set(
-      "Access-Control-Allow-Methods",
-      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
-    );
-    res.headers.set(
-      "Access-Control-Allow-Headers",
-      "Content-Type, Authorization",
-    );
-
-    return res;
+    // No Origin header (same-origin / server-to-server) or origin not allowed —
+    // let the request through without CORS headers.
+    return NextResponse.next();
   }
 
   /**
    * =========================
-   * ✅ 2. next-intl middleware
+   * ✅ 2. Admin auth guard
+   * =========================
+   */
+  if (ADMIN_PATTERN.test(pathname)) {
+    const sessionRes = await fetch(
+      `${req.nextUrl.origin}/api/auth/get-session`,
+      {
+        headers: { cookie: req.headers.get("cookie") ?? "" },
+        cache: "no-store",
+      },
+    );
+
+    const session = sessionRes.ok ? await sessionRes.json() : null;
+
+    if (!session?.user) {
+      const signInUrl = new URL("/sign-in", req.url);
+      signInUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    if (session.user.role !== "superadmin") {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+
+  /**
+   * =========================
+   * ✅ 3. next-intl middleware
    * =========================
    */
   const intlResponse = intlMiddleware(req);

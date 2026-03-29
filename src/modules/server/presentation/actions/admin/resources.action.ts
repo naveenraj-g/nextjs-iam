@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerAction } from "zsa";
+import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
   listResourcesController,
@@ -34,14 +34,14 @@ import z from "zod";
 // Resource actions
 // ------------------------------------------------------------------ //
 
-export const listResourcesAction = createServerAction().handler(async () => {
+export const listResourcesAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TListResourcesControllerOutput>(async () => {
     const data = await listResourcesController();
     return { result: data };
   });
 });
 
-export const createResourceAction = createServerAction()
+export const createResourceAction = superadminProcedure.createServerAction()
   .input(CreateResourceInput, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateResourceControllerOutput>(async () => {
@@ -50,7 +50,7 @@ export const createResourceAction = createServerAction()
     });
   });
 
-export const updateResourceAction = createServerAction()
+export const updateResourceAction = superadminProcedure.createServerAction()
   .input(UpdateResourceInput, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateResourceControllerOutput>(async () => {
@@ -59,7 +59,7 @@ export const updateResourceAction = createServerAction()
     });
   });
 
-export const deleteResourceAction = createServerAction()
+export const deleteResourceAction = superadminProcedure.createServerAction()
   .input(DeleteResourceInput, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteResourceControllerOutput>(async () => {
@@ -72,7 +72,7 @@ export const deleteResourceAction = createServerAction()
 // ResourceAction actions
 // ------------------------------------------------------------------ //
 
-export const listResourceActionsAction = createServerAction()
+export const listResourceActionsAction = superadminProcedure.createServerAction()
   .input(z.object({ resourceId: z.string().optional() }).optional())
   .handler(async ({ input }) => {
     return await runWithTransport<TListResourceActionsControllerOutput>(
@@ -83,7 +83,7 @@ export const listResourceActionsAction = createServerAction()
     );
   });
 
-export const createResourceActionAction = createServerAction()
+export const createResourceActionAction = superadminProcedure.createServerAction()
   .input(CreateResourceActionInput, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateResourceActionControllerOutput>(
@@ -94,7 +94,7 @@ export const createResourceActionAction = createServerAction()
     );
   });
 
-export const updateResourceActionAction = createServerAction()
+export const updateResourceActionAction = superadminProcedure.createServerAction()
   .input(UpdateResourceActionInput, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateResourceActionControllerOutput>(
@@ -105,7 +105,7 @@ export const updateResourceActionAction = createServerAction()
     );
   });
 
-export const deleteResourceActionAction = createServerAction()
+export const deleteResourceActionAction = superadminProcedure.createServerAction()
   .input(DeleteResourceActionInput, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteResourceActionControllerOutput>(

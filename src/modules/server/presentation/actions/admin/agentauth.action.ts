@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerAction } from "zsa";
+import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
   listAgentsController,
@@ -45,14 +45,14 @@ import {
 
 // -------------------------------------------------- Agents
 
-export const listAgentsAction = createServerAction().handler(async () => {
+export const listAgentsAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TListAgentsControllerOutput>(async () => {
     const data = await listAgentsController();
     return { result: data };
   });
 });
 
-export const registerAgentAction = createServerAction()
+export const registerAgentAction = superadminProcedure.createServerAction()
   .input(RegisterAgentActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRegisterAgentControllerOutput>(async () => {
@@ -61,7 +61,7 @@ export const registerAgentAction = createServerAction()
     });
   });
 
-export const updateAgentAction = createServerAction()
+export const updateAgentAction = superadminProcedure.createServerAction()
   .input(UpdateAgentActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateAgentControllerOutput>(async () => {
@@ -70,7 +70,7 @@ export const updateAgentAction = createServerAction()
     });
   });
 
-export const revokeAgentAction = createServerAction()
+export const revokeAgentAction = superadminProcedure.createServerAction()
   .input(RevokeAgentActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRevokeAgentControllerOutput>(async () => {
@@ -79,7 +79,7 @@ export const revokeAgentAction = createServerAction()
     });
   });
 
-export const reactivateAgentAction = createServerAction()
+export const reactivateAgentAction = superadminProcedure.createServerAction()
   .input(ReactivateAgentActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TReactivateAgentControllerOutput>(
@@ -90,7 +90,7 @@ export const reactivateAgentAction = createServerAction()
     );
   });
 
-export const grantAgentCapabilityAction = createServerAction()
+export const grantAgentCapabilityAction = superadminProcedure.createServerAction()
   .input(GrantCapabilityActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TGrantAgentCapabilityControllerOutput>(
@@ -101,7 +101,7 @@ export const grantAgentCapabilityAction = createServerAction()
     );
   });
 
-export const cleanupAgentsAction = createServerAction()
+export const cleanupAgentsAction = superadminProcedure.createServerAction()
   .input(CleanupAgentsActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCleanupAgentsControllerOutput>(async () => {
@@ -112,7 +112,7 @@ export const cleanupAgentsAction = createServerAction()
 
 // -------------------------------------------------- Approvals
 
-export const listPendingApprovalsAction = createServerAction().handler(
+export const listPendingApprovalsAction = superadminProcedure.createServerAction().handler(
   async () => {
     return await runWithTransport<TListPendingApprovalsControllerOutput>(
       async () => {
@@ -123,7 +123,7 @@ export const listPendingApprovalsAction = createServerAction().handler(
   },
 );
 
-export const approveCapabilityAction = createServerAction()
+export const approveCapabilityAction = superadminProcedure.createServerAction()
   .input(ApproveCapabilityActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TApproveCapabilityControllerOutput>(
@@ -136,14 +136,14 @@ export const approveCapabilityAction = createServerAction()
 
 // -------------------------------------------------- Hosts
 
-export const listHostsAction = createServerAction().handler(async () => {
+export const listHostsAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TListHostsControllerOutput>(async () => {
     const data = await listHostsController();
     return { result: data };
   });
 });
 
-export const createHostAction = createServerAction()
+export const createHostAction = superadminProcedure.createServerAction()
   .input(CreateHostActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateHostControllerOutput>(async () => {
@@ -152,7 +152,7 @@ export const createHostAction = createServerAction()
     });
   });
 
-export const updateHostAction = createServerAction()
+export const updateHostAction = superadminProcedure.createServerAction()
   .input(UpdateHostActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateHostControllerOutput>(async () => {
@@ -161,7 +161,7 @@ export const updateHostAction = createServerAction()
     });
   });
 
-export const revokeHostAction = createServerAction()
+export const revokeHostAction = superadminProcedure.createServerAction()
   .input(RevokeHostActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRevokeHostControllerOutput>(async () => {

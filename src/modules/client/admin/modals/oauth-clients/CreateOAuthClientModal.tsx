@@ -71,6 +71,7 @@ export const CreateOAuthClientModal = () => {
     defaultValues: {
       redirect_uris: [],
       post_logout_redirect_uris: undefined,
+      scope: "openid profile email offline_access",
     },
     shouldUnregister: false,
   });

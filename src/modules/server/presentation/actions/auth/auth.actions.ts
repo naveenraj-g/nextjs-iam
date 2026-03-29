@@ -87,7 +87,8 @@ export const signinAction = createServerAction()
           transport: {
             ...input.transportOptions,
             url: input.transportOptions?.url ?? data.url,
-            shouldRedirect: input.transportOptions?.shouldRedirect ?? data.redirect,
+            shouldRedirect:
+              input.transportOptions?.shouldRedirect ?? data.redirect,
           },
         };
       }

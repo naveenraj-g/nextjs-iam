@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerAction } from "zsa";
+import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
   listConsentsController,
@@ -22,14 +22,14 @@ import z from "zod";
 // Query actions
 // ---------------------------------------------------------- //
 
-export const listConsentsAction = createServerAction().handler(async () => {
+export const listConsentsAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TListConsentsControllerOutput>(async () => {
     const data = await listConsentsController();
     return { result: data };
   });
 });
 
-export const getConsentAction = createServerAction()
+export const getConsentAction = superadminProcedure.createServerAction()
   .input(z.object({ id: z.string() }))
   .handler(async ({ input }) => {
     return await runWithTransport<TGetConsentControllerOutput>(async () => {
@@ -42,7 +42,7 @@ export const getConsentAction = createServerAction()
 // Mutation actions
 // ---------------------------------------------------------- //
 
-export const updateConsentScopesAction = createServerAction()
+export const updateConsentScopesAction = superadminProcedure.createServerAction()
   .input(UpdateConsentScopesActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateConsentScopesControllerOutput>(
@@ -53,7 +53,7 @@ export const updateConsentScopesAction = createServerAction()
     );
   });
 
-export const deleteConsentAction = createServerAction()
+export const deleteConsentAction = superadminProcedure.createServerAction()
   .input(DeleteConsentActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteConsentControllerOutput>(async () => {

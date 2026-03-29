@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerAction } from "zsa";
+import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
   getAllSessionsController,
@@ -15,14 +15,14 @@ import {
   RevokeAllSessionsActionSchema,
 } from "@/modules/entities/schemas/admin/sessions/sessions.schema";
 
-export const getAllSessionsAction = createServerAction().handler(async () => {
+export const getAllSessionsAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TGetAllSessionsControllerOutput>(async () => {
     const data = await getAllSessionsController();
     return { result: data };
   });
 });
 
-export const revokeSessionAction = createServerAction()
+export const revokeSessionAction = superadminProcedure.createServerAction()
   .input(RevokeSessionActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRevokeSessionControllerOutput>(async () => {
@@ -31,7 +31,7 @@ export const revokeSessionAction = createServerAction()
     });
   });
 
-export const revokeAllSessionsAction = createServerAction()
+export const revokeAllSessionsAction = superadminProcedure.createServerAction()
   .input(RevokeAllSessionsActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRevokeAllSessionsControllerOutput>(async () => {

@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerAction } from "zsa";
+import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
   getUsersController,
@@ -36,14 +36,14 @@ import {
   ImpersonateUserActionSchema,
 } from "@/modules/entities/schemas/admin/users/users.schema";
 
-export const getUsersAction = createServerAction().handler(async () => {
+export const getUsersAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TGetUsersControllerOutput>(async () => {
     const data = await getUsersController();
     return { result: data };
   });
 });
 
-export const createUserAction = createServerAction()
+export const createUserAction = superadminProcedure.createServerAction()
   .input(CreateUserActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateUserControllerOutput>(async () => {
@@ -52,7 +52,7 @@ export const createUserAction = createServerAction()
     });
   });
 
-export const updateUserAction = createServerAction()
+export const updateUserAction = superadminProcedure.createServerAction()
   .input(UpdateUserActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateUserControllerOutput>(async () => {
@@ -61,7 +61,7 @@ export const updateUserAction = createServerAction()
     });
   });
 
-export const setUserRoleAction = createServerAction()
+export const setUserRoleAction = superadminProcedure.createServerAction()
   .input(SetUserRoleActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TSetUserRoleControllerOutput>(async () => {
@@ -70,7 +70,7 @@ export const setUserRoleAction = createServerAction()
     });
   });
 
-export const banUserAction = createServerAction()
+export const banUserAction = superadminProcedure.createServerAction()
   .input(BanUserActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TBanUserControllerOutput>(async () => {
@@ -79,7 +79,7 @@ export const banUserAction = createServerAction()
     });
   });
 
-export const unbanUserAction = createServerAction()
+export const unbanUserAction = superadminProcedure.createServerAction()
   .input(UnbanUserActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUnbanUserControllerOutput>(async () => {
@@ -88,7 +88,7 @@ export const unbanUserAction = createServerAction()
     });
   });
 
-export const removeUserAction = createServerAction()
+export const removeUserAction = superadminProcedure.createServerAction()
   .input(RemoveUserActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRemoveUserControllerOutput>(async () => {
@@ -97,7 +97,7 @@ export const removeUserAction = createServerAction()
     });
   });
 
-export const setUserPasswordAction = createServerAction()
+export const setUserPasswordAction = superadminProcedure.createServerAction()
   .input(SetUserPasswordActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TSetUserPasswordControllerOutput>(async () => {
@@ -106,7 +106,7 @@ export const setUserPasswordAction = createServerAction()
     });
   });
 
-export const revokeUserSessionsAction = createServerAction()
+export const revokeUserSessionsAction = superadminProcedure.createServerAction()
   .input(RevokeUserSessionsActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRevokeUserSessionsControllerOutput>(async () => {
@@ -115,7 +115,7 @@ export const revokeUserSessionsAction = createServerAction()
     });
   });
 
-export const impersonateUserAction = createServerAction()
+export const impersonateUserAction = superadminProcedure.createServerAction()
   .input(ImpersonateUserActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TImpersonateUserControllerOutput>(async () => {

@@ -17,6 +17,7 @@ import {
   lastLoginMethod,
   createAccessControl,
   magicLink,
+  customSession,
 } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
 // import { agentAuth } from "@better-auth/agent-auth";
@@ -31,6 +32,33 @@ import {
   getOAuthClientOrigins,
   validAudiencesRef,
 } from "./oauth-client-origins";
+import { getUserPermissions } from "../utils/getUserPermissions";
+
+// ── Types for customSession context payload ──────────────────────────────────
+interface NavNode {
+  id: string;
+  label: string;
+  slug: string;
+  icon: string | null;
+  href: string | null;
+  type: string;
+  permissionKeys: string[];
+  children: NavNode[];
+}
+
+interface NavApp {
+  id: string;
+  name: string;
+  slug: string;
+  menus: NavNode[];
+}
+
+interface OrgSummary {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+}
 
 // Warm the cache at module load so trustedOrigins and validAudiences are ready
 // before the first request. Does not block module initialization.
@@ -84,6 +112,29 @@ export const authConfig = {
 
   experimental: {
     joins: true,
+  },
+
+  databaseHooks: {
+    session: {
+      create: {
+        before: async (session) => {
+          // Auto-set the active organization to the user's first membership
+          // so that activeOrganizationId is never null on a fresh session.
+          const membership = await prisma.member.findFirst({
+            where: { userId: session.userId },
+            orderBy: { createdAt: "asc" },
+            select: { organizationId: true },
+          });
+
+          return {
+            data: {
+              ...session,
+              activeOrganizationId: membership?.organizationId ?? null,
+            },
+          };
+        },
+      },
+    },
   },
 
   // Dynamically load redirect URI origins from registered OAuth clients.
@@ -179,7 +230,7 @@ export const authConfig = {
 
         if (session && !session.user.emailVerified) {
           // Preserve the full OAuth query string so the flow can resume after verification
-          const requestUrl = new URL(ctx.request.url);
+          const requestUrl = new URL(ctx.request?.url as string);
           const authorizeRelativeUrl = `/api/auth/oauth2/authorize?${requestUrl.searchParams.toString()}`;
           const appUrl = process.env.BETTER_AUTH_URL!;
           const location = `${appUrl}/auth/email-verification?email=${encodeURIComponent(session.user.email)}&redirect=${encodeURIComponent(authorizeRelativeUrl)}`;
@@ -253,7 +304,17 @@ export const authConfig = {
       },
     }),
 
-    jwt(),
+    jwt({
+      jwt: {
+        definePayload: async ({ user, session }) => {
+          return {
+            ...user,
+            activeOrganizationId: session.activeOrganizationId,
+            activeTeamId: session.activeTeamId,
+          };
+        },
+      },
+    }),
 
     organization({
       allowUserToCreateOrganization: async (user) => {
@@ -334,6 +395,100 @@ export const authConfig = {
     //     },
     //   }),
     // }),
+
+    // ── Context: attach nav apps, permissions, and org list to every session ──
+    // Runs at most once per cookie-cache TTL (60 s), so the three DB queries
+    // below are not issued on every request.
+    customSession(async ({ user, session }) => {
+      const sessionData = session as typeof session & {
+        activeOrganizationId?: string | null;
+      };
+      const organizationId = sessionData.activeOrganizationId ?? null;
+
+      const [permSet, memberships, appsData] = await Promise.all([
+        organizationId
+          ? getUserPermissions(user.id, organizationId)
+          : Promise.resolve(new Set<string>()),
+        prisma.member.findMany({
+          where: { userId: user.id },
+          select: {
+            organization: {
+              select: { id: true, name: true, slug: true, logo: true },
+            },
+          },
+        }),
+        prisma.app.findMany({
+          where: { isActive: true, deletedAt: null },
+          orderBy: { name: "asc" },
+          include: {
+            menus: {
+              where: { isActive: true },
+              orderBy: { order: "asc" },
+            },
+          },
+        }),
+      ]);
+
+      type RawNode = (typeof appsData)[number]["menus"][number];
+
+      function filterNode(node: RawNode): boolean {
+        return (
+          node.permissionKeys.length === 0 ||
+          node.permissionKeys.some((k) => permSet.has(k))
+        );
+      }
+
+      function buildTree(
+        allNodes: RawNode[],
+        parentId: string | null = null,
+      ): NavNode[] {
+        return allNodes
+          .filter((n) => (n.parentId ?? null) === parentId)
+          .flatMap((n) => {
+            if (!filterNode(n)) return [];
+            const children = buildTree(allNodes, n.id);
+            if (n.type === "GROUP" && children.length === 0) return [];
+            return [
+              {
+                id: n.id,
+                label: n.label,
+                slug: n.slug,
+                icon: n.icon ?? null,
+                href: n.href ?? null,
+                type: n.type,
+                permissionKeys: n.permissionKeys,
+                children,
+              },
+            ];
+          });
+      }
+
+      const apps: NavApp[] = appsData
+        .map((app) => ({
+          id: app.id,
+          name: app.name,
+          slug: app.slug,
+          menus: buildTree(app.menus),
+        }))
+        .filter((app) => app.menus.length > 0);
+
+      const organizations: OrgSummary[] = memberships.map((m) => ({
+        id: m.organization.id,
+        name: m.organization.name,
+        slug: m.organization.slug,
+        logo: m.organization.logo,
+      }));
+
+      return {
+        user,
+        session: {
+          ...session,
+          apps,
+          permissions: Array.from(permSet),
+          organizations,
+        },
+      };
+    }),
 
     // NOTE: This plugin make sure the application knows how to set cookies in next.js, it is required for server side operations with better-auth
     nextCookies(),

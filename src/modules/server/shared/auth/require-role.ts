@@ -11,7 +11,7 @@ export async function requireRole(roles: string[]) {
   }
 
   if (!session?.user.role || !roles.includes(session.user.role)) {
-    throw new Error("Forbidden");
+    redirect({ href: "/", locale });
   }
 
   return session;

@@ -49,7 +49,6 @@ function Signin() {
   useEffect(() => {
     (async () => {
       const lastLogin = authClient.getLastUsedLoginMethod();
-      console.log(lastLogin);
       setLastMethod(lastLogin);
     })();
   }, []);

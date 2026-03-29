@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerAction } from "zsa";
+import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
   listOrganizationsController,
@@ -66,14 +66,14 @@ import z from "zod";
 // Query actions
 // ---------------------------------------------------------- //
 
-export const listOrganizationsAction = createServerAction().handler(async () => {
+export const listOrganizationsAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TListOrganizationsControllerOutput>(async () => {
     const data = await listOrganizationsController();
     return { result: data };
   });
 });
 
-export const getOrganizationAction = createServerAction()
+export const getOrganizationAction = superadminProcedure.createServerAction()
   .input(z.object({ organizationId: z.string() }))
   .handler(async ({ input }) => {
     return await runWithTransport<TGetOrganizationControllerOutput>(async () => {
@@ -86,7 +86,7 @@ export const getOrganizationAction = createServerAction()
 // Organization mutation actions
 // ---------------------------------------------------------- //
 
-export const createOrganizationAction = createServerAction()
+export const createOrganizationAction = superadminProcedure.createServerAction()
   .input(CreateOrganizationActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateOrganizationControllerOutput>(async () => {
@@ -95,7 +95,7 @@ export const createOrganizationAction = createServerAction()
     });
   });
 
-export const updateOrganizationAction = createServerAction()
+export const updateOrganizationAction = superadminProcedure.createServerAction()
   .input(UpdateOrganizationActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateOrganizationControllerOutput>(async () => {
@@ -104,7 +104,7 @@ export const updateOrganizationAction = createServerAction()
     });
   });
 
-export const deleteOrganizationAction = createServerAction()
+export const deleteOrganizationAction = superadminProcedure.createServerAction()
   .input(DeleteOrganizationActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteOrganizationControllerOutput>(async () => {
@@ -117,7 +117,7 @@ export const deleteOrganizationAction = createServerAction()
 // Member actions
 // ---------------------------------------------------------- //
 
-export const addMemberAction = createServerAction()
+export const addMemberAction = superadminProcedure.createServerAction()
   .input(AddMemberActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TAddMemberControllerOutput>(async () => {
@@ -126,7 +126,7 @@ export const addMemberAction = createServerAction()
     });
   });
 
-export const updateMemberRoleAction = createServerAction()
+export const updateMemberRoleAction = superadminProcedure.createServerAction()
   .input(UpdateMemberRoleActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateMemberRoleControllerOutput>(async () => {
@@ -135,7 +135,7 @@ export const updateMemberRoleAction = createServerAction()
     });
   });
 
-export const removeMemberAction = createServerAction()
+export const removeMemberAction = superadminProcedure.createServerAction()
   .input(RemoveMemberActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRemoveMemberControllerOutput>(async () => {
@@ -148,7 +148,7 @@ export const removeMemberAction = createServerAction()
 // Invitation actions
 // ---------------------------------------------------------- //
 
-export const createInvitationAction = createServerAction()
+export const createInvitationAction = superadminProcedure.createServerAction()
   .input(CreateInvitationActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateInvitationControllerOutput>(async () => {
@@ -157,7 +157,7 @@ export const createInvitationAction = createServerAction()
     });
   });
 
-export const cancelInvitationAction = createServerAction()
+export const cancelInvitationAction = superadminProcedure.createServerAction()
   .input(CancelInvitationActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCancelInvitationControllerOutput>(async () => {
@@ -170,7 +170,7 @@ export const cancelInvitationAction = createServerAction()
 // Team actions
 // ---------------------------------------------------------- //
 
-export const createTeamAction = createServerAction()
+export const createTeamAction = superadminProcedure.createServerAction()
   .input(CreateTeamActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateTeamControllerOutput>(async () => {
@@ -179,7 +179,7 @@ export const createTeamAction = createServerAction()
     });
   });
 
-export const updateTeamAction = createServerAction()
+export const updateTeamAction = superadminProcedure.createServerAction()
   .input(UpdateTeamActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateTeamControllerOutput>(async () => {
@@ -188,7 +188,7 @@ export const updateTeamAction = createServerAction()
     });
   });
 
-export const removeTeamAction = createServerAction()
+export const removeTeamAction = superadminProcedure.createServerAction()
   .input(RemoveTeamActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRemoveTeamControllerOutput>(async () => {
@@ -201,7 +201,7 @@ export const removeTeamAction = createServerAction()
 // Team member actions
 // ---------------------------------------------------------- //
 
-export const addTeamMemberAction = createServerAction()
+export const addTeamMemberAction = superadminProcedure.createServerAction()
   .input(AddTeamMemberActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TAddTeamMemberControllerOutput>(async () => {
@@ -210,7 +210,7 @@ export const addTeamMemberAction = createServerAction()
     });
   });
 
-export const removeTeamMemberAction = createServerAction()
+export const removeTeamMemberAction = superadminProcedure.createServerAction()
   .input(RemoveTeamMemberActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRemoveTeamMemberControllerOutput>(async () => {
@@ -223,7 +223,7 @@ export const removeTeamMemberAction = createServerAction()
 // Org role actions
 // ---------------------------------------------------------- //
 
-export const listOrgRolesAction = createServerAction()
+export const listOrgRolesAction = superadminProcedure.createServerAction()
   .input(z.object({ organizationId: z.string() }))
   .handler(async ({ input }) => {
     return await runWithTransport<TListOrgRolesControllerOutput>(async () => {
@@ -232,7 +232,7 @@ export const listOrgRolesAction = createServerAction()
     });
   });
 
-export const createOrgRoleAction = createServerAction()
+export const createOrgRoleAction = superadminProcedure.createServerAction()
   .input(CreateOrgRoleActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateOrgRoleControllerOutput>(async () => {
@@ -241,7 +241,7 @@ export const createOrgRoleAction = createServerAction()
     });
   });
 
-export const updateOrgRoleAction = createServerAction()
+export const updateOrgRoleAction = superadminProcedure.createServerAction()
   .input(UpdateOrgRoleActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateOrgRoleControllerOutput>(async () => {
@@ -250,7 +250,7 @@ export const updateOrgRoleAction = createServerAction()
     });
   });
 
-export const deleteOrgRoleAction = createServerAction()
+export const deleteOrgRoleAction = superadminProcedure.createServerAction()
   .input(DeleteOrgRoleActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteOrgRoleControllerOutput>(async () => {

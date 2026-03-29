@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerAction } from "zsa";
+import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
   listApiKeysController,
@@ -26,7 +26,7 @@ import z from "zod";
 // Query actions
 // ---------------------------------------------------------- //
 
-export const listApiKeysAction = createServerAction()
+export const listApiKeysAction = superadminProcedure.createServerAction()
   .input(
     z.object({
       userId: z.string().optional(),
@@ -47,7 +47,7 @@ export const listApiKeysAction = createServerAction()
 // Mutation actions
 // ---------------------------------------------------------- //
 
-export const createApiKeyAction = createServerAction()
+export const createApiKeyAction = superadminProcedure.createServerAction()
   .input(CreateApiKeyActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateApiKeyControllerOutput>(async () => {
@@ -56,7 +56,7 @@ export const createApiKeyAction = createServerAction()
     });
   });
 
-export const updateApiKeyAction = createServerAction()
+export const updateApiKeyAction = superadminProcedure.createServerAction()
   .input(UpdateApiKeyActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateApiKeyControllerOutput>(async () => {
@@ -65,7 +65,7 @@ export const updateApiKeyAction = createServerAction()
     });
   });
 
-export const deleteApiKeyAction = createServerAction()
+export const deleteApiKeyAction = superadminProcedure.createServerAction()
   .input(DeleteApiKeyActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteApiKeyControllerOutput>(async () => {
@@ -74,7 +74,7 @@ export const deleteApiKeyAction = createServerAction()
     });
   });
 
-export const deleteExpiredApiKeysAction = createServerAction()
+export const deleteExpiredApiKeysAction = superadminProcedure.createServerAction()
   .input(DeleteExpiredApiKeysActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteExpiredApiKeysControllerOutput>(

@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerAction } from "zsa";
+import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
   listAppsController,
@@ -39,7 +39,7 @@ import z from "zod";
 // App query actions
 // ---------------------------------------------------------- //
 
-export const listAppsAction = createServerAction().handler(async () => {
+export const listAppsAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TListAppsControllerOutput>(async () => {
     const data = await listAppsController();
     return { result: data };
@@ -50,7 +50,7 @@ export const listAppsAction = createServerAction().handler(async () => {
 // App mutation actions
 // ---------------------------------------------------------- //
 
-export const createAppAction = createServerAction()
+export const createAppAction = superadminProcedure.createServerAction()
   .input(CreateAppActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateAppControllerOutput>(async () => {
@@ -59,7 +59,7 @@ export const createAppAction = createServerAction()
     });
   });
 
-export const updateAppAction = createServerAction()
+export const updateAppAction = superadminProcedure.createServerAction()
   .input(UpdateAppActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateAppControllerOutput>(async () => {
@@ -68,7 +68,7 @@ export const updateAppAction = createServerAction()
     });
   });
 
-export const deleteAppAction = createServerAction()
+export const deleteAppAction = superadminProcedure.createServerAction()
   .input(DeleteAppActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteAppControllerOutput>(async () => {
@@ -81,7 +81,7 @@ export const deleteAppAction = createServerAction()
 // MenuNode query actions
 // ---------------------------------------------------------- //
 
-export const listMenuNodesAction = createServerAction()
+export const listMenuNodesAction = superadminProcedure.createServerAction()
   .input(z.object({ appId: z.string() }))
   .handler(async ({ input }) => {
     return await runWithTransport<TListMenuNodesControllerOutput>(async () => {
@@ -90,7 +90,7 @@ export const listMenuNodesAction = createServerAction()
     });
   });
 
-export const listActionsAction = createServerAction().handler(async () => {
+export const listActionsAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TListActionsControllerOutput>(async () => {
     const data = await listActionsController();
     return { result: data };
@@ -101,7 +101,7 @@ export const listActionsAction = createServerAction().handler(async () => {
 // MenuNode mutation actions
 // ---------------------------------------------------------- //
 
-export const createMenuNodeAction = createServerAction()
+export const createMenuNodeAction = superadminProcedure.createServerAction()
   .input(CreateMenuNodeActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateMenuNodeControllerOutput>(async () => {
@@ -110,7 +110,7 @@ export const createMenuNodeAction = createServerAction()
     });
   });
 
-export const updateMenuNodeAction = createServerAction()
+export const updateMenuNodeAction = superadminProcedure.createServerAction()
   .input(UpdateMenuNodeActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateMenuNodeControllerOutput>(async () => {
@@ -119,7 +119,7 @@ export const updateMenuNodeAction = createServerAction()
     });
   });
 
-export const deleteMenuNodeAction = createServerAction()
+export const deleteMenuNodeAction = superadminProcedure.createServerAction()
   .input(DeleteMenuNodeActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteMenuNodeControllerOutput>(async () => {
@@ -128,7 +128,7 @@ export const deleteMenuNodeAction = createServerAction()
     });
   });
 
-export const reorderMenuNodeAction = createServerAction()
+export const reorderMenuNodeAction = superadminProcedure.createServerAction()
   .input(ReorderMenuNodeActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TReorderMenuNodeControllerOutput>(

@@ -12,5 +12,8 @@ export const getServerSession = async () => {
   return session
 }
 
+/** Full session type including customSession extensions (apps, permissions, organizations). */
+export type TServerSession = Awaited<ReturnType<typeof getServerSession>>
+
 export const isEmailVerificationEnabled =
   authConfig.emailAndPassword?.requireEmailVerification

@@ -16,9 +16,9 @@ const TTL_MS = 60_000; // 60 seconds
  * array in-place makes validAudiences effectively dynamic.
  * Initialized with BETTER_AUTH_URL as a safe baseline.
  */
-export const validAudiencesRef: string[] = [process.env.BETTER_AUTH_URL!].filter(
-  Boolean,
-);
+export const validAudiencesRef: string[] = [
+  process.env.BETTER_AUTH_URL!,
+].filter(Boolean);
 
 function extractOrigin(uri: string): string | null {
   try {
@@ -36,7 +36,9 @@ async function fetchAndApply(): Promise<string[]> {
   const origins = [
     ...new Set(
       clients.flatMap((c) =>
-        c.redirectUris.map(extractOrigin).filter((o): o is string => o !== null),
+        c.redirectUris
+          .map(extractOrigin)
+          .filter((o): o is string => o !== null),
       ),
     ),
   ];

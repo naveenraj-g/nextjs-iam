@@ -6,9 +6,11 @@ import {
   twoFactorClient,
   lastLoginMethodClient,
   magicLinkClient,
+  customSessionClient,
 } from "better-auth/client/plugins";
 import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { agentAuthClient } from "@better-auth/agent-auth/client";
+import { auth } from "@/modules/server/auth-provider/auth";
 
 export const authClient = createAuthClient({
   /** The base URL of the server (optional if you're using the same domain) */
@@ -24,6 +26,7 @@ export const authClient = createAuthClient({
     oauthProviderClient(),
     agentAuthClient(),
     lastLoginMethodClient(),
+    customSessionClient<typeof auth>(),
   ],
 });
 

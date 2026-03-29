@@ -1,6 +1,6 @@
 "use server";
 
-import { createServerAction } from "zsa";
+import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
   CreateOAuthClientActionSchema,
@@ -22,14 +22,14 @@ import {
 } from "@/modules/server/core/admin/interface-adapters/controllers/oauthclient";
 import { refreshOAuthClientOrigins } from "@/modules/server/auth-provider/oauth-client-origins";
 
-export const getOAuthClientsAction = createServerAction().handler(async () => {
+export const getOAuthClientsAction = superadminProcedure.createServerAction().handler(async () => {
   return await runWithTransport<TGetOAuthClientsControllerOutput>(async () => {
     const data = await getOAuthClientsController();
     return { result: data };
   });
 });
 
-export const createOAuthClientAction = createServerAction()
+export const createOAuthClientAction = superadminProcedure.createServerAction()
   .input(CreateOAuthClientActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TCreateOAuthClientControllerOutput>(
@@ -41,7 +41,7 @@ export const createOAuthClientAction = createServerAction()
     );
   });
 
-export const updateOAuthClientAction = createServerAction()
+export const updateOAuthClientAction = superadminProcedure.createServerAction()
   .input(UpdateOAuthClientActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TUpdateOAuthClientControllerOutput>(
@@ -53,7 +53,7 @@ export const updateOAuthClientAction = createServerAction()
     );
   });
 
-export const deleteOAuthClientAction = createServerAction()
+export const deleteOAuthClientAction = superadminProcedure.createServerAction()
   .input(DeleteOAuthClientActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TDeleteOAuthClientControllerOutput>(
@@ -65,7 +65,7 @@ export const deleteOAuthClientAction = createServerAction()
     );
   });
 
-export const rotateClientSecretAction = createServerAction()
+export const rotateClientSecretAction = superadminProcedure.createServerAction()
   .input(RotateClientSecretActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TRotateClientSecretControllerOutput>(

@@ -36,9 +36,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const sessionData = session.session as typeof session.session & {
+    activeOrganizationId?: string | null;
+  };
+
   const organizationId =
     req.nextUrl.searchParams.get("organizationId") ??
-    session.session.activeOrganizationId;
+    sessionData.activeOrganizationId;
 
   const [permSet, memberships, appsWithMenus] = await Promise.all([
     organizationId
@@ -114,6 +118,6 @@ export async function GET(req: NextRequest) {
     apps,
     permissions: Array.from(permSet),
     organizations,
-    activeOrganizationId: session.session.activeOrganizationId ?? null,
+    activeOrganizationId: sessionData.activeOrganizationId ?? null,
   });
 }
