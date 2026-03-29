@@ -1,5 +1,8 @@
 import { PublicNavbar } from "@/modules/client/shared/navbar/PublicNavbar";
-import { getServerSession, type TServerSession } from "@/modules/server/auth-provider/auth-server";
+import {
+  getServerSession,
+  type TServerSession,
+} from "@/modules/server/auth-provider/auth-server";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -39,7 +42,7 @@ export async function AuthLayout({ children }: AuthLayoutProps) {
 
           {/* Bottom — copyright */}
           <p className="relative z-10 text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Doctor Godly. All rights reserved.
+            © {new Date().getFullYear()} AlphaesAI. All rights reserved.
           </p>
         </div>
 

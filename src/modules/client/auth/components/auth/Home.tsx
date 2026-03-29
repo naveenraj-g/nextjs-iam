@@ -733,7 +733,7 @@ function FooterSection() {
               <ShieldCheck className="h-3.5 w-3.5 text-background" />
             </div>
             <span className="text-sm font-semibold tracking-tight">
-              Doctor Godly IAM
+              AlphaesAI IAM
             </span>
           </div>
           <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2">
@@ -748,7 +748,7 @@ function FooterSection() {
             ))}
           </nav>
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Doctor Godly
+            © {new Date().getFullYear()} AlphaesAI
           </p>
         </div>
       </div>

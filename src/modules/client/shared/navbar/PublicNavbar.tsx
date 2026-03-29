@@ -57,7 +57,7 @@ export function PublicNavbar({ session }: PublicNavbarProps) {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-foreground">
             <ShieldCheck className="h-4 w-4 text-background" />
           </div>
-          <span>Doctor Godly</span>
+          <span>AlphaesAI</span>
         </Link>
 
         {/* Right side */}
