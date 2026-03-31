@@ -1,4 +1,4 @@
-import Home from "@/modules/client/auth/components/auth/Home";
+import Home from "@/modules/client/auth/components/landing/Home";
 import { getServerSession } from "@/modules/server/auth-provider/auth-server";
 
 async function HomePage() {

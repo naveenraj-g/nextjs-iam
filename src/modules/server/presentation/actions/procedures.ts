@@ -18,7 +18,7 @@ export const superadminProcedure = createServerActionProcedure().handler(
       throw new ZSAError("NOT_AUTHORIZED", "You must be signed in.");
     }
 
-    if (session.user.role !== "superadmin") {
+    if ((session.user as any).role !== "superadmin") {
       throw new ZSAError("FORBIDDEN", "Insufficient permissions.");
     }
 

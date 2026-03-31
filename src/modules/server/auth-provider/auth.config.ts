@@ -66,21 +66,12 @@ void getOAuthClientOrigins();
 
 const statement = {
   ...defaultStatements,
-  oauthClients: ["create", "read", "update", "delete"],
-  organizations: ["create", "read", "update", "delete"],
 } as const;
 
 const ac = createAccessControl(statement);
 
-const adminRole = ac.newRole({
-  oauthClients: ["create", "read"],
-  organizations: ["read"],
-});
-
 const superAdminRole = ac.newRole({
   ...adminAc.statements,
-  oauthClients: ["create", "read", "update", "delete"],
-  organizations: ["create", "read", "update", "delete"],
 });
 
 const guestRole = ac.newRole({
@@ -307,10 +298,20 @@ export const authConfig = {
     jwt({
       jwt: {
         definePayload: async ({ user, session }) => {
+          const orgId = session.activeOrganizationId;
+
+          let permissions: string[] = [];
+
+          if (orgId) {
+            const permSet = await getUserPermissions(user.id, orgId);
+            permissions = Array.from(permSet);
+          }
+
           return {
             ...user,
             activeOrganizationId: session.activeOrganizationId,
             activeTeamId: session.activeTeamId,
+            permissions,
           };
         },
       },
@@ -333,11 +334,10 @@ export const authConfig = {
     admin({
       ac,
       roles: {
-        admin: adminRole,
         superadmin: superAdminRole,
         guest: guestRole,
       },
-      adminRoles: ["admin", "superadmin"],
+      adminRoles: ["superadmin"],
       defaultRole: "guest",
     }),
 
@@ -360,7 +360,7 @@ export const authConfig = {
 
       clientPrivileges: ({ user }) => {
         if (!user) return false;
-        return user.role === "superadmin" || user.role === "admin";
+        return user.role === "superadmin";
       },
 
       // Mutable array reference: Better Auth reads opts.validAudiences on

@@ -35,8 +35,15 @@ export function LoginActivityChart({ data }: LoginActivityChartProps) {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[220px] w-full">
-          <LineChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+          <LineChart
+            data={data}
+            margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+          >
+            <CartesianGrid
+              vertical={false}
+              stroke="hsl(var(--border))"
+              strokeDasharray="3 3"
+            />
             <XAxis
               dataKey="day"
               tickLine={false}
