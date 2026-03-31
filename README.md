@@ -327,3 +327,7 @@ This architecture is:
 - Easy to migrate
 
 You can safely build large-scale features without breaking structure, while keeping flexibility to extract backend services when needed.
+
+```
+"seed:admin-menu": "tsx --env-file=.env scripts/seed-admin-menu.ts","seed:admin": "tsx --env-file=.env scripts/seed-admin.ts"
+```
