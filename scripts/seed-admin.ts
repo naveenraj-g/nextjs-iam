@@ -192,8 +192,8 @@ async function main() {
   await prisma.user.update({ where: { id: userId }, data: { role: "superadmin" } });
   console.log("  Global role set → superadmin");
 
-  // ── Phase 3: Organization ─────────────────────────────────────────
-  console.log("\n━━━ Phase 3: Organization ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  // ── Phase 3a: Superadmin organization ────────────────────────────
+  console.log("\n━━━ Phase 3a: Superadmin Organization ━━━━━━━━━━━━━━━━━━━━━━━");
 
   const org = await prisma.organization.upsert({
     where: { slug: ORG_SLUG },
@@ -219,6 +219,35 @@ async function main() {
       },
     });
     console.log(`  Member added with role "${ORG_ROLE}"`);
+  }
+
+  // ── Phase 3b: drgodly organization ───────────────────────────────
+  console.log("\n━━━ Phase 3b: drgodly Organization ━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+  const drgodlyOrg = await prisma.organization.upsert({
+    where: { slug: "drgodly" },
+    create: { id: randomUUID(), name: "drgodly", slug: "drgodly", createdAt: new Date() },
+    update: { name: "drgodly" },
+  });
+  console.log(`\n  "${drgodlyOrg.name}" (${drgodlyOrg.id})`);
+
+  const existingDrgodlyMember = await prisma.member.findFirst({
+    where: { organizationId: drgodlyOrg.id, userId },
+  });
+  if (existingDrgodlyMember) {
+    await prisma.member.update({ where: { id: existingDrgodlyMember.id }, data: { role: "owner" } });
+    console.log(`  Member role updated → "owner"`);
+  } else {
+    await prisma.member.create({
+      data: {
+        id: randomUUID(),
+        organizationId: drgodlyOrg.id,
+        userId,
+        role: "owner",
+        createdAt: new Date(),
+      },
+    });
+    console.log(`  Member added with role "owner"`);
   }
 
   // ── Phase 4: Resource + ResourceActions ───────────────────────────
@@ -317,7 +346,7 @@ async function main() {
   console.log("  Email:    ", ADMIN_EMAIL);
   console.log("  Password: ", ADMIN_PASSWORD);
   console.log("  Role:     ", "superadmin");
-  console.log("  Org:      ", `${ORG_NAME} (role: ${ORG_ROLE})`);
+  console.log("  Orgs:     ", `${ORG_NAME} (role: ${ORG_ROLE}), drgodly (role: owner)`);
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 }
 

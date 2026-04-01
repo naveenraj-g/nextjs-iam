@@ -158,11 +158,7 @@ export type TGrantCapabilityResponseDtoSchema = z.infer<
 export const CreateHostFormSchema = z.object({
   name: z.string().min(1, "Host name is required"),
   default_capabilities: z.string().optional(),
-  jwks_url: z
-    .string()
-    .url("Must be a valid URL")
-    .optional()
-    .or(z.literal("")),
+  jwks_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 export type TCreateHostFormSchema = z.infer<typeof CreateHostFormSchema>;
 
@@ -239,10 +235,7 @@ export type TRegisterAgentActionSchema = z.infer<
   typeof RegisterAgentActionSchema
 >;
 
-export const RegisterAgentResponseDtoSchema = z.record(
-  z.string(),
-  z.unknown(),
-);
+export const RegisterAgentResponseDtoSchema = z.record(z.string(), z.unknown());
 export type TRegisterAgentResponseDtoSchema = z.infer<
   typeof RegisterAgentResponseDtoSchema
 >;
@@ -364,11 +357,7 @@ export const UpdateHostFormSchema = z.object({
   host_id: z.string(),
   name: z.string().min(1, "Host name is required"),
   default_capabilities: z.string().optional(),
-  jwks_url: z
-    .string()
-    .url("Must be a valid URL")
-    .optional()
-    .or(z.literal("")),
+  jwks_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 export type TUpdateHostFormSchema = z.infer<typeof UpdateHostFormSchema>;
 

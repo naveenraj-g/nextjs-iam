@@ -1,5 +1,7 @@
 "server-only";
 
+import { randomUUID } from "crypto";
+
 // packages import
 import { APIError, type BetterAuthOptions } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
@@ -106,6 +108,39 @@ export const authConfig = {
   },
 
   databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Auto-add every new signup to the drgodly organization as a member.
+          try {
+            const org = await prisma.organization.findUnique({
+              where: { slug: "drgodly" },
+              select: { id: true },
+            });
+            if (!org) return;
+
+            const alreadyMember = await prisma.member.findFirst({
+              where: { organizationId: org.id, userId: user.id },
+              select: { id: true },
+            });
+            if (alreadyMember) return;
+
+            await prisma.member.create({
+              data: {
+                id: randomUUID(),
+                organizationId: org.id,
+                userId: user.id,
+                role: "member",
+                createdAt: new Date(),
+              },
+            });
+          } catch {
+            // Do not block signup if the org doesn't exist yet
+          }
+        },
+      },
+    },
+
     session: {
       create: {
         before: async (session) => {

@@ -19,7 +19,7 @@ export default async function ApiKeysPage() {
         apiKeys={result?.apiKeys ?? null}
         total={result?.total ?? 0}
         error={error ? "Failed to load API keys" : null}
-        currentUserId={session.user.id}
+        currentUserId={session!.user.id}
       />
     </div>
   );
