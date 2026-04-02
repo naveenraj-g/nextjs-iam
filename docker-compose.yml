@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   iam-app:
-    build: .
+    image: ghcr.io/naveenraj-g/iam-app/v1:latest
     container_name: iam-app
     env_file:
       - .env
