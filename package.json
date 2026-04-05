@@ -14,7 +14,9 @@
     "deps": "pnpm dlx madge src/modules --circular --extensions ts",
     "deps:graph": "madge src/modules --image deps.svg --extensions ts,tsx",
     "seed:admin-menu": "tsx --env-file=.env scripts/seed-admin-menu.ts",
-    "seed:admin": "tsx scripts/seed-admin.ts"
+    "seed:admin": "tsx scripts/seed-admin.ts",
+    "seed:admin:dev": "tsx --env-file=.env scripts/seed-admin.ts",
+    "db:migrate": "pnpm prisma migrate dev --name init"
   },
   "dependencies": {
     "@better-auth/agent-auth": "^0.4.3",

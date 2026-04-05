@@ -66,6 +66,97 @@ interface OrgSummary {
 // before the first request. Does not block module initialization.
 void getOAuthClientOrigins();
 
+// ── Shared user-context builder ───────────────────────────────────────────────
+// Called by both customSession (has session → activeOrganizationId directly)
+// and customUserInfoClaims (no session → resolved from latest DB session).
+async function buildUserContext(userId: string, organizationId: string | null) {
+  type RawNode = Awaited<
+    ReturnType<typeof prisma.appMenuNode.findMany>
+  >[number];
+
+  const [permSet, memberships, appsData] = await Promise.all([
+    organizationId
+      ? getUserPermissions(userId, organizationId)
+      : Promise.resolve(new Set<string>()),
+    prisma.member.findMany({
+      where: { userId },
+      select: {
+        organization: {
+          select: { id: true, name: true, slug: true, logo: true },
+        },
+      },
+    }),
+    prisma.app.findMany({
+      where: { isActive: true, deletedAt: null },
+      orderBy: { name: "asc" },
+      include: {
+        menus: {
+          where: { isActive: true },
+          orderBy: { order: "asc" },
+        },
+      },
+    }),
+  ]);
+
+  function filterNode(node: RawNode): boolean {
+    return (
+      node.permissionKeys.length === 0 ||
+      node.permissionKeys.some((k) => permSet.has(k))
+    );
+  }
+
+  function buildTree(
+    allNodes: RawNode[],
+    parentId: string | null = null,
+  ): NavNode[] {
+    return allNodes
+      .filter((n) => (n.parentId ?? null) === parentId)
+      .flatMap((n) => {
+        if (!filterNode(n)) return [];
+        const children = buildTree(allNodes, n.id);
+        if (n.type === "GROUP" && children.length === 0) return [];
+        return [
+          {
+            id: n.id,
+            label: n.label,
+            slug: n.slug,
+            icon: n.icon ?? null,
+            href: n.href ?? null,
+            type: n.type,
+            permissionKeys: n.permissionKeys,
+            children,
+          },
+        ];
+      });
+  }
+
+  const apps: NavApp[] = appsData
+    .map((app) => ({
+      id: app.id,
+      name: app.name,
+      slug: app.slug,
+      menus: buildTree(app.menus),
+    }))
+    .filter((app) => app.menus.length > 0);
+
+  const organizations: OrgSummary[] = memberships.map((m) => ({
+    id: m.organization.id,
+    name: m.organization.name,
+    slug: m.organization.slug,
+    logo: m.organization.logo,
+  }));
+
+  return {
+    apps,
+    permissions: Array.from(permSet),
+    organizations,
+  };
+}
+
+// Single source of truth — controls both emailAndPassword config and the
+// OAuth2 authorize hook that enforces verification before the OAuth flow.
+const REQUIRE_EMAIL_VERIFICATION = false;
+
 const statement = {
   ...defaultStatements,
 } as const;
@@ -169,7 +260,7 @@ export const authConfig = {
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false,
+    requireEmailVerification: REQUIRE_EMAIL_VERIFICATION,
     sendResetPassword: async ({ user, url }) => {
       void sendAuthEmail({
         to: user.email,
@@ -254,7 +345,11 @@ export const authConfig = {
         const session =
           await ctx.context.internalAdapter.findSession(sessionId);
 
-        if (session && !session.user.emailVerified) {
+        if (
+          session &&
+          !session.user.emailVerified &&
+          REQUIRE_EMAIL_VERIFICATION
+        ) {
           // Preserve the full OAuth query string so the flow can resume after verification
           const requestUrl = new URL(ctx.request?.url as string);
           const authorizeRelativeUrl = `/api/auth/oauth2/authorize?${requestUrl.searchParams.toString()}`;
@@ -335,18 +430,13 @@ export const authConfig = {
         definePayload: async ({ user, session }) => {
           const orgId = session.activeOrganizationId;
 
-          let permissions: string[] = [];
-
-          if (orgId) {
-            const permSet = await getUserPermissions(user.id, orgId);
-            permissions = Array.from(permSet);
-          }
+          const ctx = await buildUserContext(user.id, orgId);
 
           return {
             ...user,
             activeOrganizationId: session.activeOrganizationId,
             activeTeamId: session.activeTeamId,
-            permissions,
+            ...ctx,
           };
         },
       },
@@ -398,6 +488,33 @@ export const authConfig = {
         return user.role === "superadmin";
       },
 
+      customUserInfoClaims: async ({ user, jwt }) => {
+        // jwt.sid is the session ID that authorized this token.
+        // Use it directly — no OauthAccessToken join needed, and it is
+        // correct even when the user has multiple active sessions with
+        // different activeOrganizationIds.
+        const sid = (jwt as Record<string, unknown> | null)?.sid as
+          | string
+          | undefined;
+
+        let organizationId: string | null = null;
+
+        if (sid) {
+          const session = await prisma.session.findUnique({
+            where: { id: sid },
+          });
+          organizationId =
+            (
+              session as typeof session & {
+                activeOrganizationId?: string | null;
+              }
+            )?.activeOrganizationId ?? null;
+        }
+
+        const ctx = await buildUserContext(user.id, organizationId);
+        return { ...ctx, activeOrganizationId: organizationId };
+      },
+
       // Mutable array reference: Better Auth reads opts.validAudiences on
       // every token/authorize request, so mutating this array in-place
       // (done by refreshOAuthClientOrigins) makes it effectively dynamic.
@@ -432,96 +549,17 @@ export const authConfig = {
     // }),
 
     // ── Context: attach nav apps, permissions, and org list to every session ──
-    // Runs at most once per cookie-cache TTL (60 s), so the three DB queries
-    // below are not issued on every request.
+    // Runs at most once per cookie-cache TTL (60 s).
     customSession(async ({ user, session }) => {
       const sessionData = session as typeof session & {
         activeOrganizationId?: string | null;
       };
       const organizationId = sessionData.activeOrganizationId ?? null;
-
-      const [permSet, memberships, appsData] = await Promise.all([
-        organizationId
-          ? getUserPermissions(user.id, organizationId)
-          : Promise.resolve(new Set<string>()),
-        prisma.member.findMany({
-          where: { userId: user.id },
-          select: {
-            organization: {
-              select: { id: true, name: true, slug: true, logo: true },
-            },
-          },
-        }),
-        prisma.app.findMany({
-          where: { isActive: true, deletedAt: null },
-          orderBy: { name: "asc" },
-          include: {
-            menus: {
-              where: { isActive: true },
-              orderBy: { order: "asc" },
-            },
-          },
-        }),
-      ]);
-
-      type RawNode = (typeof appsData)[number]["menus"][number];
-
-      function filterNode(node: RawNode): boolean {
-        return (
-          node.permissionKeys.length === 0 ||
-          node.permissionKeys.some((k) => permSet.has(k))
-        );
-      }
-
-      function buildTree(
-        allNodes: RawNode[],
-        parentId: string | null = null,
-      ): NavNode[] {
-        return allNodes
-          .filter((n) => (n.parentId ?? null) === parentId)
-          .flatMap((n) => {
-            if (!filterNode(n)) return [];
-            const children = buildTree(allNodes, n.id);
-            if (n.type === "GROUP" && children.length === 0) return [];
-            return [
-              {
-                id: n.id,
-                label: n.label,
-                slug: n.slug,
-                icon: n.icon ?? null,
-                href: n.href ?? null,
-                type: n.type,
-                permissionKeys: n.permissionKeys,
-                children,
-              },
-            ];
-          });
-      }
-
-      const apps: NavApp[] = appsData
-        .map((app) => ({
-          id: app.id,
-          name: app.name,
-          slug: app.slug,
-          menus: buildTree(app.menus),
-        }))
-        .filter((app) => app.menus.length > 0);
-
-      const organizations: OrgSummary[] = memberships.map((m) => ({
-        id: m.organization.id,
-        name: m.organization.name,
-        slug: m.organization.slug,
-        logo: m.organization.logo,
-      }));
+      const ctx = await buildUserContext(user.id, organizationId);
 
       return {
         user,
-        session: {
-          ...session,
-          apps,
-          permissions: Array.from(permSet),
-          organizations,
-        },
+        session: { ...session, ...ctx },
       };
     }),
 

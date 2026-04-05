@@ -6,7 +6,7 @@ const intlMiddleware = createMiddleware(routing);
 
 // Matches /[locale]/admin and /[locale]/admin/* — locale segment is one or more non-slash chars
 const ADMIN_PATTERN = /^\/[^/]+\/admin(\/|$)/;
-
+const baseUrl = process.env.INTERNAL_URL || "http://localhost:5000";
 // ---------------------------------------------------------------------------
 // Dynamic CORS origins — sourced from OAuth client redirect URIs in the DB.
 // Middleware runs in Edge Runtime (no Prisma), so we fetch from an internal
@@ -62,10 +62,11 @@ export async function proxy(req: NextRequest) {
    */
   if (pathname.startsWith("/api")) {
     const requestOrigin = req.headers.get("origin");
-
+    console.log({ requestOrigin });
     if (requestOrigin) {
-      const allowedOrigins = await getAllowedOrigins(req.nextUrl.origin);
-
+      const allowedOrigins = await getAllowedOrigins(baseUrl);
+      console.log({ allowedOrigins });
+      allowedOrigins.add("https://test.drgodly.com");
       if (allowedOrigins.has(requestOrigin)) {
         // Preflight
         if (req.method === "OPTIONS") {
@@ -95,18 +96,18 @@ export async function proxy(req: NextRequest) {
    * =========================
    */
   if (ADMIN_PATTERN.test(pathname)) {
-    const sessionRes = await fetch(
-      `${req.nextUrl.origin}/api/auth/get-session`,
-      {
-        headers: { cookie: req.headers.get("cookie") ?? "" },
-        cache: "no-store",
+    const sessionRes = await fetch(`${baseUrl}/api/auth/get-session`, {
+      headers: {
+        cookie: req.headers.get("cookie") ?? "",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
       },
-    );
+      cache: "no-store",
+    });
 
     const session = sessionRes.ok ? await sessionRes.json() : null;
 
     if (!session?.user) {
-      const signInUrl = new URL("/sign-in", req.url);
+      const signInUrl = new URL("/auth/sign-in", req.url);
       signInUrl.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(signInUrl);
     }
@@ -154,6 +155,7 @@ export async function proxy(req: NextRequest) {
  */
 export const config = {
   matcher: [
+    "/api/:path*",
     /*
      * Apply to everything EXCEPT:
      * - static files

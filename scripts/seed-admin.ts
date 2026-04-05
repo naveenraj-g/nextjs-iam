@@ -48,7 +48,12 @@ const ADMIN_MENU: {
     label: "OVERVIEW",
     slug: "overview",
     children: [
-      { label: "Dashboard", slug: "dashboard", href: "/admin", icon: "layout-dashboard" },
+      {
+        label: "Dashboard",
+        slug: "dashboard",
+        href: "/admin",
+        icon: "layout-dashboard",
+      },
     ],
   },
   {
@@ -56,15 +61,30 @@ const ADMIN_MENU: {
     slug: "identity",
     children: [
       { label: "Users", slug: "users", href: "/admin/users", icon: "users" },
-      { label: "Organizations", slug: "organizations", href: "/admin/organizations", icon: "building-2" },
+      {
+        label: "Organizations",
+        slug: "organizations",
+        href: "/admin/organizations",
+        icon: "building-2",
+      },
     ],
   },
   {
     label: "AUTHORIZATION",
     slug: "authorization",
     children: [
-      { label: "Resources", slug: "resources", href: "/admin/resources", icon: "database" },
-      { label: "Actions", slug: "resource-actions", href: "/admin/resource-actions", icon: "zap" },
+      {
+        label: "Resources",
+        slug: "resources",
+        href: "/admin/resources",
+        icon: "database",
+      },
+      {
+        label: "Actions",
+        slug: "resource-actions",
+        href: "/admin/resource-actions",
+        icon: "zap",
+      },
     ],
   },
   {
@@ -78,19 +98,54 @@ const ADMIN_MENU: {
     label: "APPLICATION",
     slug: "application",
     children: [
-      { label: "OAuth Clients", slug: "oauth-clients", href: "/admin/oauth-clients", icon: "globe" },
-      { label: "Agent Auth", slug: "agent-auth", href: "/admin/agent-auth", icon: "bot" },
-      { label: "Consents", slug: "consents", href: "/admin/consents", icon: "file-check" },
-      { label: "API Keys", slug: "api-keys", href: "/admin/api-keys", icon: "key" },
+      {
+        label: "OAuth Clients",
+        slug: "oauth-clients",
+        href: "/admin/oauth-clients",
+        icon: "globe",
+      },
+      {
+        label: "Agent Auth",
+        slug: "agent-auth",
+        href: "/admin/agent-auth",
+        icon: "bot",
+      },
+      {
+        label: "Consents",
+        slug: "consents",
+        href: "/admin/consents",
+        icon: "file-check",
+      },
+      {
+        label: "API Keys",
+        slug: "api-keys",
+        href: "/admin/api-keys",
+        icon: "key",
+      },
     ],
   },
   {
     label: "SECURITY",
     slug: "security",
     children: [
-      { label: "Sessions", slug: "sessions", href: "/admin/sessions", icon: "activity" },
-      { label: "Audit Logs", slug: "audit-logs", href: "/admin/audit-logs", icon: "scroll-text" },
-      { label: "Security Policies", slug: "security-policies", href: "/admin/security-policies", icon: "shield-check" },
+      {
+        label: "Sessions",
+        slug: "sessions",
+        href: "/admin/sessions",
+        icon: "activity",
+      },
+      {
+        label: "Audit Logs",
+        slug: "audit-logs",
+        href: "/admin/audit-logs",
+        icon: "scroll-text",
+      },
+      {
+        label: "Security Policies",
+        slug: "security-policies",
+        href: "/admin/security-policies",
+        icon: "shield-check",
+      },
     ],
   },
 ];
@@ -124,7 +179,11 @@ async function main() {
       description: "Admin portal navigation",
       isActive: true,
     },
-    update: { name: "Admin", description: "Admin portal navigation", isActive: true },
+    update: {
+      name: "Admin",
+      description: "Admin portal navigation",
+      isActive: true,
+    },
   });
   console.log(`\n  App: "${app.name}" (${app.id})`);
 
@@ -176,7 +235,9 @@ async function main() {
   console.log("\n━━━ Phase 2: Admin User ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
   let userId: string;
-  const existing = await prisma.user.findUnique({ where: { email: ADMIN_EMAIL } });
+  const existing = await prisma.user.findUnique({
+    where: { email: ADMIN_EMAIL },
+  });
 
   if (existing) {
     userId = existing.id;
@@ -189,15 +250,25 @@ async function main() {
     console.log(`\n  Created: ${ADMIN_EMAIL} (${userId})`);
   }
 
-  await prisma.user.update({ where: { id: userId }, data: { role: "superadmin" } });
+  await prisma.user.update({
+    where: { id: userId },
+    data: { role: "superadmin" },
+  });
   console.log("  Global role set → superadmin");
 
   // ── Phase 3a: Superadmin organization ────────────────────────────
-  console.log("\n━━━ Phase 3a: Superadmin Organization ━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log(
+    "\n━━━ Phase 3a: Superadmin Organization ━━━━━━━━━━━━━━━━━━━━━━━",
+  );
 
   const org = await prisma.organization.upsert({
     where: { slug: ORG_SLUG },
-    create: { id: randomUUID(), name: ORG_NAME, slug: ORG_SLUG, createdAt: new Date() },
+    create: {
+      id: randomUUID(),
+      name: ORG_NAME,
+      slug: ORG_SLUG,
+      createdAt: new Date(),
+    },
     update: { name: ORG_NAME },
   });
   console.log(`\n  "${org.name}" (${org.id})`);
@@ -206,7 +277,10 @@ async function main() {
     where: { organizationId: org.id, userId },
   });
   if (existingMember) {
-    await prisma.member.update({ where: { id: existingMember.id }, data: { role: ORG_ROLE } });
+    await prisma.member.update({
+      where: { id: existingMember.id },
+      data: { role: ORG_ROLE },
+    });
     console.log(`  Member role updated → "${ORG_ROLE}"`);
   } else {
     await prisma.member.create({
@@ -222,11 +296,18 @@ async function main() {
   }
 
   // ── Phase 3b: drgodly organization ───────────────────────────────
-  console.log("\n━━━ Phase 3b: drgodly Organization ━━━━━━━━━━━━━━━━━━━━━━━━━━");
+  console.log(
+    "\n━━━ Phase 3b: drgodly Organization ━━━━━━━━━━━━━━━━━━━━━━━━━━",
+  );
 
   const drgodlyOrg = await prisma.organization.upsert({
     where: { slug: "drgodly" },
-    create: { id: randomUUID(), name: "drgodly", slug: "drgodly", createdAt: new Date() },
+    create: {
+      id: randomUUID(),
+      name: "drgodly",
+      slug: "drgodly",
+      createdAt: new Date(),
+    },
     update: { name: "drgodly" },
   });
   console.log(`\n  "${drgodlyOrg.name}" (${drgodlyOrg.id})`);
@@ -235,7 +316,10 @@ async function main() {
     where: { organizationId: drgodlyOrg.id, userId },
   });
   if (existingDrgodlyMember) {
-    await prisma.member.update({ where: { id: existingDrgodlyMember.id }, data: { role: "owner" } });
+    await prisma.member.update({
+      where: { id: existingDrgodlyMember.id },
+      data: { role: "owner" },
+    });
     console.log(`  Member role updated → "owner"`);
   } else {
     await prisma.member.create({
@@ -276,7 +360,10 @@ async function main() {
         key,
         description: `Access to the ${item.label} admin page`,
       },
-      update: { name: item.label, description: `Access to the ${item.label} admin page` },
+      update: {
+        name: item.label,
+        description: `Access to the ${item.label} admin page`,
+      },
     });
     console.log(`  Action: ${ra.key}`);
   }
@@ -337,7 +424,9 @@ async function main() {
       },
     });
   }
-  console.log(`\n  Role "${ORG_ROLE}" granted ${allActions.length} permissions:`);
+  console.log(
+    `\n  Role "${ORG_ROLE}" granted ${allActions.length} permissions:`,
+  );
   console.log(`  ${allActions.map((a) => `${RESOURCE_NAME}:${a}`).join(", ")}`);
 
   // ── Summary ───────────────────────────────────────────────────────
@@ -346,7 +435,10 @@ async function main() {
   console.log("  Email:    ", ADMIN_EMAIL);
   console.log("  Password: ", ADMIN_PASSWORD);
   console.log("  Role:     ", "superadmin");
-  console.log("  Orgs:     ", `${ORG_NAME} (role: ${ORG_ROLE}), drgodly (role: owner)`);
+  console.log(
+    "  Orgs:     ",
+    `${ORG_NAME} (role: ${ORG_ROLE}), drgodly (role: owner)`,
+  );
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 }
 
