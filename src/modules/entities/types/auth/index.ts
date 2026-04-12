@@ -4,6 +4,7 @@ import { TSocialProviders } from "../../enums/auth/auth.enum"
 // payloads
 export type TBaseSigninOrSignupPayload = {
   name: string
+  username: string
   email: string
   password: string
   rememberMe: boolean
@@ -11,7 +12,7 @@ export type TBaseSigninOrSignupPayload = {
 
 export type TSignupEmailPayload = Pick<
   TBaseSigninOrSignupPayload,
-  "email" | "name" | "password" | "rememberMe"
+  "email" | "name" | "username" | "password" | "rememberMe"
 >
 
 export type TSigninEmailPayload = Pick<

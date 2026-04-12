@@ -7,8 +7,10 @@ import { IAgentAuthService } from "../core/admin/domain/interfaces/agentauth.ser
 import { IAppsService } from "../core/admin/domain/interfaces/apps.service.interface";
 import { IResourcesService } from "../core/admin/domain/interfaces/resources.service.interface";
 import { IApiKeyService } from "../core/admin/domain/interfaces/apikeys.service.interface";
+import { IPreferenceTemplatesService } from "../core/admin/domain/interfaces/preferenceTemplates.service.interface";
 import { IAuthService } from "../core/auth/domain/interfaces/auth.service.interface";
 import { IEmailService } from "../core/common/email/domain/interfaces/email.service.interface";
+import { IUserPreferenceService } from "../core/settings/domain/interfaces/userPreference.service.interface";
 
 export const DI_SYMBOLS = {
   // Repositories
@@ -25,6 +27,8 @@ export const DI_SYMBOLS = {
   IAppsService: Symbol.for("IAppsService"),
   IResourcesService: Symbol.for("IResourcesService"),
   IApiKeyService: Symbol.for("IApiKeyService"),
+  IPreferenceTemplatesService: Symbol.for("IPreferenceTemplatesService"),
+  IUserPreferenceService: Symbol.for("IUserPreferenceService"),
 };
 
 export interface DI_RETURN_TYPES {
@@ -42,4 +46,6 @@ export interface DI_RETURN_TYPES {
   IAppsService: IAppsService;
   IResourcesService: IResourcesService;
   IApiKeyService: IApiKeyService;
+  IPreferenceTemplatesService: IPreferenceTemplatesService;
+  IUserPreferenceService: IUserPreferenceService;
 }

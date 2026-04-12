@@ -55,6 +55,7 @@ export class AuthService implements IAuthService {
       const res = await auth.api.signUpEmail({
         body: {
           name: payload.name,
+          username: payload.username,
           email: payload.email,
           password: payload.password,
           callbackURL: "/",

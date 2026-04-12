@@ -42,6 +42,9 @@ model User {
 
   teammembers TeamMember[]
 
+  userpreferences       UserPreference?
+  context UserContext?
+
   @@unique([email])
   @@map("user")
   @@unique([username])
@@ -559,4 +562,65 @@ model ResourceAction {
   @@unique([resourceId, name])
   @@index([resourceId])
   @@map("appAction")
+}
+
+////////////////////////////////
+
+model UserPreference {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  timezone     String?  @default("Asia/Kolkata")
+  dateFormat   String?  @default("DD/MM/YYYY")
+  timeFormat   String?  @default("hh:mm A")
+  country      String?  @default("IN")
+  currency     String?  @default("INR")
+  // measurementSystem String?  @default("metric")
+  numberFormat String?  @default("1,23,456.78")
+  weekStart    String?  @default("monday")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("userPreference")
+}
+
+// timeFormat stores a dayjs format string: "hh:mm A" (12h) or "HH:mm" (24h)
+// When scope=COUNTRY, country must be non-null (enforced at application layer)
+model PreferenceTemplate {
+  id           String          @id @default(uuid())
+  scope        PreferenceScope @default(GLOBAL)
+  country      String?
+  timezone     String?         @default("UTC")
+  dateFormat   String?         @default("DD/MM/YYYY")
+  timeFormat   String?         @default("HH:mm")
+  currency     String?         @default("USD")
+  // measurementSystem String?         @default("metric")
+  numberFormat String?         @default("1,234.56")
+  weekStart    String?         @default("monday")
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([scope, country])
+  @@map("preferenceTemplate")
+}
+
+enum PreferenceScope {
+  GLOBAL
+  COUNTRY
+}
+
+model UserContext {
+  id String @id @default(uuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  activeOrganizationId String?
+  redirectAfterLogin   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("userContext")
 }

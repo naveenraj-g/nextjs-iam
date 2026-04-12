@@ -81,6 +81,7 @@ async function buildUserContext(userId: string, organizationId: string | null) {
     prisma.member.findMany({
       where: { userId },
       select: {
+        role: true,
         organization: {
           select: { id: true, name: true, slug: true, logo: true },
         },
@@ -146,10 +147,18 @@ async function buildUserContext(userId: string, organizationId: string | null) {
     logo: m.organization.logo,
   }));
 
+  const rawRole = organizationId
+    ? (memberships.find((m) => m.organization.id === organizationId)?.role ?? null)
+    : null;
+  const activeOrganizationRoles = rawRole
+    ? rawRole.split(",").map((r) => r.trim())
+    : [];
+
   return {
     apps,
     permissions: Array.from(permSet),
     organizations,
+    activeOrganizationRoles,
   };
 }
 

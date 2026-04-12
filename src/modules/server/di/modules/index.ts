@@ -9,3 +9,5 @@ export * from "./admin/agentauth.module";
 export * from "./admin/apps.module";
 export * from "./admin/resources.module";
 export * from "./admin/apikeys.module";
+export * from "./admin/preferenceTemplates.module";
+export * from "./settings/userPreference.module";

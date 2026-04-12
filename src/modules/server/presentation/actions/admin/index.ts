@@ -7,3 +7,4 @@ export * from "./agentauth.action";
 export * from "./apps.action";
 export * from "./resources.action";
 export * from "./apikeys.action";
+export * from "./preference-templates.action";

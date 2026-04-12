@@ -73,7 +73,11 @@ export type ModalType =
   | "createApiKey"
   | "editApiKey"
   | "deleteApiKey"
-  | "viewApiKeySecret";
+  | "viewApiKeySecret"
+  // Preference Templates
+  | "createPreferenceTemplate"
+  | "editPreferenceTemplate"
+  | "deletePreferenceTemplate";
 
 export interface ModalData {
   // Users
@@ -174,6 +178,16 @@ export interface ModalData {
   apiKeyEnabled?: boolean;
   apiKeySecret?: string;   // raw key — only available right after creation
   apiKeyReferenceId?: string;
+  // Preference Templates
+  preferenceTemplateId?: string;
+  preferenceTemplateScope?: "GLOBAL" | "COUNTRY";
+  preferenceTemplateCountry?: string | null;
+  preferenceTemplateTimezone?: string | null;
+  preferenceTemplateDateFormat?: string | null;
+  preferenceTemplateTimeFormat?: string | null;
+  preferenceTemplateCurrency?: string | null;
+  preferenceTemplateNumberFormat?: string | null;
+  preferenceTemplateWeekStart?: string | null;
 }
 
 interface IAdminStore {

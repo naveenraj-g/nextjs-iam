@@ -7,6 +7,7 @@ import { UserSchema } from "./reusable.schema"
 // form schemas (used in client side forms)
 export const SignupFormSchema = BaseSigninOrSignupSchema.pick({
   name: true,
+  username: true,
   email: true,
   password: true,
   rememberMe: true
@@ -33,6 +34,7 @@ export type TForgetPasswordOrMagicLinkFormSchema = z.infer<
 // validation schemas (used in and controllers)
 export const SignupValidationSchema = BaseSigninOrSignupSchema.pick({
   name: true,
+  username: true,
   email: true,
   password: true,
   rememberMe: true

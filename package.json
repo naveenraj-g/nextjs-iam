@@ -16,6 +16,8 @@
     "seed:admin-menu": "tsx --env-file=.env scripts/seed-admin-menu.ts",
     "seed:admin": "tsx scripts/seed-admin.ts",
     "seed:admin:dev": "tsx --env-file=.env scripts/seed-admin.ts",
+    "seed:patient-menu": "tsx scripts/seed-patient-menu.ts",
+    "seed:patient-menu:dev": "tsx --env-file=.env scripts/seed-patient-menu.ts",
     "db:migrate": "pnpm prisma migrate dev --name init"
   },
   "dependencies": {
@@ -64,6 +66,7 @@
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
     "inversify": "^7.10.8",
+    "jose": "^6.2.2",
     "lucide-react": "^0.562.0",
     "moment-timezone": "^0.6.0",
     "next": "16.1.1",

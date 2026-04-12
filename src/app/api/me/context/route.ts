@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { auth } from "@/modules/server/auth-provider/auth";
 import { prisma } from "../../../../../prisma/db";
 import { getUserPermissions } from "@/modules/server/utils/getUserPermissions";
@@ -30,7 +29,7 @@ interface OrgSummary {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({ headers: req.headers });
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,7 +50,9 @@ export async function GET(req: NextRequest) {
     prisma.member.findMany({
       where: { userId: session.user.id },
       select: {
-        organization: { select: { id: true, name: true, slug: true, logo: true } },
+        organization: {
+          select: { id: true, name: true, slug: true, logo: true },
+        },
       },
     }),
     prisma.app.findMany({

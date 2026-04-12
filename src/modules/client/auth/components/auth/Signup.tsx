@@ -48,6 +48,7 @@ function Signup() {
     resolver: zodResolver(SignupFormSchema),
     defaultValues: {
       name: "",
+      username: "",
       email: "",
       password: "",
       rememberMe: true,
@@ -126,6 +127,29 @@ function Signup() {
                       aria-invalid={fieldState.invalid}
                       placeholder="Name"
                     />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+
+              {/* username */}
+              <Controller
+                control={form.control}
+                name="username"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor="username">Username</FieldLabel>
+                    <Input
+                      {...field}
+                      id="username"
+                      aria-invalid={fieldState.invalid}
+                      placeholder="your_username"
+                    />
+                    <FieldDescription>
+                      Only lowercase letters, numbers, and underscores
+                    </FieldDescription>
                     {fieldState.invalid && (
                       <FieldError errors={[fieldState.error]} />
                     )}
