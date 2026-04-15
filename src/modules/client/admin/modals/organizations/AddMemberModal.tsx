@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useAdminStore } from "../../stores/admin.store";
 import { useServerAction } from "zsa-react";
@@ -18,8 +19,10 @@ import {
   TAddMemberValidationSchema,
   TOrgRoleSchema,
 } from "@/modules/entities/schemas/admin/organizations/organizations.schema";
-import { addMemberAction } from "@/modules/server/presentation/actions/admin/organizations.action";
-import { listOrgRolesAction } from "@/modules/server/presentation/actions/admin/organizations.action";
+import {
+  addMemberAction,
+  listOrgRolesAction,
+} from "@/modules/server/presentation/actions/admin/organizations.action";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import { AddMemberForm } from "../../forms/organizations/AddMemberForm";
 
@@ -35,16 +38,20 @@ export const AddMemberModal = () => {
 
   const [availableRoles, setAvailableRoles] = useState<string[]>(DEFAULT_ROLES);
 
+  const { execute: fetchRoles, isPending: isLoading } = useServerAction(listOrgRolesAction, {
+    onSuccess({ data }) {
+      const customRoles = (data as TOrgRoleSchema[]).map((r) => r.role);
+      const combined = [
+        ...DEFAULT_ROLES,
+        ...customRoles.filter((r) => !DEFAULT_ROLES.includes(r)),
+      ];
+      setAvailableRoles(combined);
+    },
+  });
+
   useEffect(() => {
     if (!isModalOpen || !modalData?.organizationId) return;
-    void (async () => {
-      const [data] = await listOrgRolesAction({ organizationId: modalData.organizationId! });
-      if (data) {
-        const customRoles = (data as TOrgRoleSchema[]).map((r) => r.role);
-        const combined = [...DEFAULT_ROLES, ...customRoles.filter((r: string) => !DEFAULT_ROLES.includes(r))];
-        setAvailableRoles(combined);
-      }
-    })();
+    void fetchRoles({ organizationId: modalData.organizationId! });
   }, [isModalOpen, modalData?.organizationId]);
 
   const form = useForm<TAddMemberValidationSchema>({
@@ -89,13 +96,35 @@ export const AddMemberModal = () => {
           <DialogTitle>Add Member</DialogTitle>
           <DialogDescription>Add a user to this organization.</DialogDescription>
         </DialogHeader>
-        <FormProvider {...form}>
-          <AddMemberForm
-            onSubmit={handleSubmit}
-            onCancel={handleClose}
-            availableRoles={availableRoles}
-          />
-        </FormProvider>
+
+        {isLoading ? (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-9 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-10" />
+              <div className="grid grid-cols-2 gap-2">
+                {DEFAULT_ROLES.map((r) => (
+                  <Skeleton key={r} className="h-9 w-full rounded-md" />
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+            </div>
+          </div>
+        ) : (
+          <FormProvider {...form}>
+            <AddMemberForm
+              onSubmit={handleSubmit}
+              onCancel={handleClose}
+              availableRoles={availableRoles}
+            />
+          </FormProvider>
+        )}
       </DialogContent>
     </Dialog>
   );

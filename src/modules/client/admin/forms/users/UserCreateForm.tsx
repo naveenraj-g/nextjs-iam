@@ -34,6 +34,14 @@ export function UserCreateForm({ onSubmit, onCancel }: UserCreateFormProps) {
       />
       <FormInput
         control={control}
+        name="username"
+        label="Username"
+        placeholder="e.g. john_doe"
+        description="Optional. Lowercase, numbers, _ and - only."
+        descriptionPlace="bottom"
+      />
+      <FormInput
+        control={control}
         name="password"
         label="Password"
         type="password"

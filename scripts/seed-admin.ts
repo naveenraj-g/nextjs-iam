@@ -67,6 +67,12 @@ const ADMIN_MENU: {
         href: "/admin/organizations",
         icon: "building-2",
       },
+      {
+        label: "User Context",
+        slug: "user-context",
+        href: "/admin/user-context",
+        icon: "layers",
+      },
     ],
   },
   {

@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useAdminStore } from "../../stores/admin.store";
 import { useServerAction } from "zsa-react";
@@ -33,12 +34,15 @@ export const CreateOrgRoleModal = () => {
 
   const [availableActions, setAvailableActions] = useState<TResourceActionSchema[]>([]);
 
+  const { execute: fetchActions, isPending: isLoading } = useServerAction(listResourceActionsAction, {
+    onSuccess({ data }) {
+      setAvailableActions(data);
+    },
+  });
+
   useEffect(() => {
     if (!isModalOpen) return;
-    void (async () => {
-      const [data] = await listResourceActionsAction();
-      if (data) setAvailableActions(data);
-    })();
+    void fetchActions();
   }, [isModalOpen]);
 
   const form = useForm<TCreateOrgRoleValidationSchema>({
@@ -86,15 +90,41 @@ export const CreateOrgRoleModal = () => {
             Define a custom role and assign permissions to it.
           </DialogDescription>
         </DialogHeader>
-        <FormProvider {...form}>
-          <OrgRoleForm
-            onSubmit={handleSubmit}
-            onCancel={handleClose}
-            availableActions={availableActions}
-            showRoleNameInput
-            submitLabel="Create Role"
-          />
-        </FormProvider>
+
+        {isLoading ? (
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-9 w-full" />
+              <Skeleton className="h-3 w-56" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <div className="rounded-md border p-3 space-y-3 max-h-72">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Skeleton className="h-4 w-4 rounded-sm shrink-0" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+            </div>
+          </div>
+        ) : (
+          <FormProvider {...form}>
+            <OrgRoleForm
+              onSubmit={handleSubmit}
+              onCancel={handleClose}
+              availableActions={availableActions}
+              showRoleNameInput
+              submitLabel="Create Role"
+            />
+          </FormProvider>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useAdminStore } from "../../stores/admin.store";
 import { useServerAction } from "zsa-react";
@@ -31,15 +32,17 @@ export const CreateResourceActionModal = () => {
 
   const isModalOpen = isOpen && modalType === "createResourceAction";
 
-  const [resources, setResources] = useState<{ id: string; name: string }[]>(
-    [],
-  );
+  const [resources, setResources] = useState<{ id: string; name: string }[]>([]);
+
+  const { execute: fetchResources, isPending: isLoading } = useServerAction(listResourcesAction, {
+    onSuccess({ data }) {
+      setResources(data.map((r) => ({ id: r.id, name: r.name })));
+    },
+  });
 
   useEffect(() => {
     if (!isModalOpen) return;
-    listResourcesAction().then(([data]) => {
-      if (data) setResources(data.map((r) => ({ id: r.id, name: r.name })));
-    });
+    void fetchResources();
   }, [isModalOpen]);
 
   const form = useForm<TCreateResourceActionFormSchema>({
@@ -96,15 +99,32 @@ export const CreateResourceActionModal = () => {
             Add a new action (permission) to a resource.
           </DialogDescription>
         </DialogHeader>
-        <FormProvider {...form}>
-          <ResourceActionForm
-            onSubmit={handleSubmit}
-            onCancel={handleClose}
-            resources={resources}
-            showResourceSelect
-            submitLabel="Create Action"
-          />
-        </FormProvider>
+
+        {isLoading ? (
+          <div className="space-y-4">
+            {/* Resource select, Name, Key, Description */}
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="space-y-1.5">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            ))}
+            <div className="flex justify-end gap-2">
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 w-32 rounded-md" />
+            </div>
+          </div>
+        ) : (
+          <FormProvider {...form}>
+            <ResourceActionForm
+              onSubmit={handleSubmit}
+              onCancel={handleClose}
+              resources={resources}
+              showResourceSelect
+              submitLabel="Create Action"
+            />
+          </FormProvider>
+        )}
       </DialogContent>
     </Dialog>
   );

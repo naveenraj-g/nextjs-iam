@@ -106,6 +106,7 @@ export class UsersService implements IUsersService {
           email: payload.email,
           password: payload.password,
           role: payload.role,
+          ...(payload.username ? { username: payload.username } : {}),
         },
         headers: await headers(),
       });

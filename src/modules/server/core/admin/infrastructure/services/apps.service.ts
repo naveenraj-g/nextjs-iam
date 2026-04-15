@@ -239,6 +239,7 @@ export class AppsService implements IAppsService {
         order: n.order,
         type: n.type as "GROUP" | "ITEM",
         isActive: n.isActive,
+        isVisible: n.isVisible,
         permissionKeys: n.permissionKeys,
         createdAt: n.createdAt,
         updatedAt: n.updatedAt,
@@ -291,6 +292,7 @@ export class AppsService implements IAppsService {
           order: payload.order ?? 0,
           type: (payload.type ?? "ITEM") as "GROUP" | "ITEM",
           isActive: true,
+          isVisible: payload.isVisible ?? true,
           permissionKeys: payload.permissionKeys ?? [],
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -342,6 +344,7 @@ export class AppsService implements IAppsService {
           ...(payload.order !== undefined && { order: payload.order }),
           ...(payload.type && { type: payload.type as "GROUP" | "ITEM" }),
           ...(payload.isActive !== undefined && { isActive: payload.isActive }),
+          ...(payload.isVisible !== undefined && { isVisible: payload.isVisible }),
           ...(payload.permissionKeys !== undefined && {
             permissionKeys: payload.permissionKeys,
           }),

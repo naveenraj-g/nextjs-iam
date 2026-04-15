@@ -18,6 +18,10 @@
     "seed:admin:dev": "tsx --env-file=.env scripts/seed-admin.ts",
     "seed:patient-menu": "tsx scripts/seed-patient-menu.ts",
     "seed:patient-menu:dev": "tsx --env-file=.env scripts/seed-patient-menu.ts",
+    "seed:doctor-menu": "tsx scripts/seed-doctor-menu.ts",
+    "seed:doctor-menu:dev": "tsx --env-file=.env scripts/seed-doctor-menu.ts",
+    "seed:telemedicine-app-admin-menu": "tsx scripts/seed-telemedicine-app-admin-menu.ts",
+    "seed:telemedicine-app-admin-menu:dev": "tsx --env-file=.env scripts/seed-telemedicine-app-admin-menu.ts",
     "db:migrate": "pnpm prisma migrate dev --name init"
   },
   "dependencies": {

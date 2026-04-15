@@ -111,6 +111,7 @@ export const MenuNodeSchema = z.object({
   order: z.number(),
   type: z.enum(["GROUP", "ITEM"]),
   isActive: z.boolean(),
+  isVisible: z.boolean().default(true),
   permissionKeys: z.array(z.string()).default([]),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -134,6 +135,7 @@ export const CreateMenuNodeFormSchema = z.object({
   href: z.string().optional(),
   type: z.enum(["GROUP", "ITEM"]).default("ITEM"),
   order: z.number().default(0),
+  isVisible: z.boolean().default(true),
   permissionKeys: z.array(z.string()).default([]),
 });
 export type TCreateMenuNodeFormSchema = z.infer<
@@ -149,6 +151,7 @@ export const CreateMenuNodeValidationSchema = z.object({
   href: z.string().optional(),
   type: z.enum(["GROUP", "ITEM"]).default("ITEM"),
   order: z.number().default(0),
+  isVisible: z.boolean().default(true),
   permissionKeys: z.array(z.string()).default([]),
 });
 export type TCreateMenuNodeValidationSchema = z.infer<
@@ -173,6 +176,7 @@ export const UpdateMenuNodeFormSchema = z.object({
   type: z.enum(["GROUP", "ITEM"]),
   order: z.number(),
   isActive: z.boolean(),
+  isVisible: z.boolean(),
   permissionKeys: z.array(z.string()).default([]),
 });
 export type TUpdateMenuNodeFormSchema = z.infer<
@@ -189,6 +193,7 @@ export const UpdateMenuNodeValidationSchema = z.object({
   type: z.enum(["GROUP", "ITEM"]).optional(),
   order: z.number().optional(),
   isActive: z.boolean().optional(),
+  isVisible: z.boolean().optional(),
   permissionKeys: z.array(z.string()).optional(),
 });
 export type TUpdateMenuNodeValidationSchema = z.infer<

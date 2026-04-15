@@ -22,7 +22,8 @@ const prisma = new PrismaClient({ adapter });
 const ADMIN_MENU: {
   label: string;
   slug: string;
-  children: { label: string; slug: string; href: string; icon: string }[];
+  isVisible?: boolean;
+  children: { label: string; slug: string; href: string; icon: string; isVisible?: boolean }[];
 }[] = [
   {
     label: "OVERVIEW",
@@ -101,6 +102,7 @@ async function main() {
     const group = ADMIN_MENU[gi];
 
     // Upsert the GROUP node
+    const groupVisible = group.isVisible ?? true;
     const groupNode = await prisma.appMenuNode.upsert({
       where: { appId_slug: { appId: app.id, slug: group.slug } },
       create: {
@@ -109,11 +111,13 @@ async function main() {
         slug: group.slug,
         type: "GROUP",
         order: gi,
+        isVisible: groupVisible,
         permissionKeys: [],
       },
       update: {
         label: group.label,
         order: gi,
+        isVisible: groupVisible,
       },
     });
 
@@ -122,6 +126,7 @@ async function main() {
     // Upsert each ITEM under the group
     for (let ii = 0; ii < group.children.length; ii++) {
       const item = group.children[ii];
+      const itemVisible = item.isVisible ?? true;
 
       const itemNode = await prisma.appMenuNode.upsert({
         where: { appId_slug: { appId: app.id, slug: item.slug } },
@@ -134,6 +139,7 @@ async function main() {
           icon: item.icon,
           type: "ITEM",
           order: ii,
+          isVisible: itemVisible,
           permissionKeys: [],
         },
         update: {
@@ -142,10 +148,12 @@ async function main() {
           href: item.href,
           icon: item.icon,
           order: ii,
+          isVisible: itemVisible,
         },
       });
 
-      console.log(`    ITEM: "${item.label}" → ${item.href} (${itemNode.id})`);
+      const tag = itemVisible ? "" : " [hidden — permission only]";
+      console.log(`    ITEM: "${item.label}" → ${item.href} (${itemNode.id})${tag}`);
     }
   }
 

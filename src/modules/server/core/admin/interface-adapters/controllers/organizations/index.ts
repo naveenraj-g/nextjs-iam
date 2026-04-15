@@ -13,6 +13,7 @@ export * from "./updateTeam.controller";
 export * from "./removeTeam.controller";
 export * from "./addTeamMember.controller";
 export * from "./removeTeamMember.controller";
+export * from "./getOrgRoleRedirects.controller";
 export * from "./listOrgRoles.controller";
 export * from "./createOrgRole.controller";
 export * from "./updateOrgRole.controller";

@@ -52,6 +52,12 @@ export type TGetUsersResponseDtoSchema = z.infer<typeof GetUsersResponseDtoSchem
 export const CreateUserFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .regex(/^[a-z0-9_-]+$/, "Lowercase letters, numbers, _ and - only")
+    .optional()
+    .or(z.literal("")),
   password: z.string().min(8, "Password must be at least 8 characters"),
   role: z.enum(["guest", "admin", "superadmin"]).default("guest"),
 });
@@ -191,6 +197,12 @@ export type TRevokeUserSessionsActionSchema = z.infer<typeof RevokeUserSessionsA
 export const UpdateUserFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email"),
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .regex(/^[a-z0-9_-]+$/, "Lowercase letters, numbers, _ and - only")
+    .optional()
+    .or(z.literal("")),
   image: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
@@ -199,6 +211,7 @@ export const UpdateUserValidationSchema = z.object({
   data: z.object({
     name: z.string().min(1).optional(),
     email: z.string().email().optional(),
+    username: z.string().optional().nullable(),
     image: z.string().url().optional().nullable(),
   }),
 });

@@ -32,6 +32,7 @@ interface NavNode {
   icon: string | null;
   href: string | null;
   type: string;
+  isVisible: boolean;
   permissionKeys: string[];
   children: NavNode[];
 }
@@ -63,17 +64,18 @@ interface ContextResponse {
 function buildNavGroups(apps: ContextApp[]): NavGroupProps[] {
   return apps.flatMap((app) =>
     app.menus
-      .filter((node) => node.type === "GROUP")
+      .filter((node) => node.type === "GROUP" && node.isVisible)
       .map((group) => ({
         title: group.label,
         items: group.children
-          .filter((child) => child.type === "ITEM")
+          .filter((child) => child.type === "ITEM" && child.isVisible)
           .map((child) => {
-            if (child.children.length > 0) {
+            const visibleSubs = child.children.filter((sub) => sub.isVisible);
+            if (visibleSubs.length > 0) {
               return {
                 title: child.label,
                 icon: child.icon ?? undefined,
-                items: child.children.map((sub) => ({
+                items: visibleSubs.map((sub) => ({
                   title: sub.label,
                   url: sub.href ?? "#",
                   icon: sub.icon ?? undefined,

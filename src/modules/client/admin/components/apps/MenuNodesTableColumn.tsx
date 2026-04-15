@@ -91,6 +91,26 @@ export const menuNodesTableColumn = ({
     },
   },
   {
+    header: "Nav",
+    accessorKey: "isVisible",
+    cell({ row }) {
+      const isVisible = row.original.isVisible;
+      return (
+        <Badge
+          className={cn(
+            buttonVariants({ size: "sm", variant: "default" }),
+            "cursor-default h-6 rounded-lg",
+            isVisible
+              ? "bg-blue-500/15 text-blue-600 hover:bg-blue-500/20 hover:text-blue-600 dark:text-blue-400"
+              : "bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground",
+          )}
+        >
+          {isVisible ? "Shown" : "Hidden"}
+        </Badge>
+      );
+    },
+  },
+  {
     header: "Permissions",
     accessorKey: "permissionKeys",
     cell({ row }) {
@@ -170,6 +190,7 @@ export const menuNodesTableColumn = ({
                     menuNodeIcon: node.icon ?? null,
                     menuNodeHref: node.href ?? null,
                     menuNodeIsActive: node.isActive,
+                    menuNodeIsVisible: node.isVisible,
                     menuNodeAppId: node.appId,
                     menuNodePermissionKeys: node.permissionKeys ?? [],
                     menuNodeOrder: node.order,

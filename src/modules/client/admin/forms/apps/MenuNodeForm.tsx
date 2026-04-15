@@ -130,7 +130,8 @@ export function MenuNodeForm({
         placeholder="e.g. /dashboard"
         description="URL path e.g. /dashboard"
       />
-      <FormSwitch control={control} name="isActive" label="Visible" />
+      <FormSwitch control={control} name="isActive" label="Active" />
+      <FormSwitch control={control} name="isVisible" label="Show in sidebar nav" />
 
       {/* Permission Keys tag input */}
       <Controller

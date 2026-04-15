@@ -32,7 +32,14 @@ const prisma = new PrismaClient({ adapter });
 const PATIENT_MENU: {
   label: string;
   slug: string;
-  children: { label: string; slug: string; href: string; icon: string }[];
+  isVisible?: boolean;
+  children: {
+    label: string;
+    slug: string;
+    href: string;
+    icon: string;
+    isVisible?: boolean;
+  }[];
 }[] = [
   {
     label: "PATIENT",
@@ -49,6 +56,12 @@ const PATIENT_MENU: {
         slug: "profile",
         href: "/bezs/telemedicine/patient/profile",
         icon: "user-cog",
+      },
+      {
+        label: "Appointments",
+        slug: "patient-appointment",
+        href: "/bezs/telemedicine/patient/appointments",
+        icon: "calendar-clock",
       },
       {
         label: "Book Appointment",
@@ -114,6 +127,7 @@ async function main() {
   for (let gi = 0; gi < PATIENT_MENU.length; gi++) {
     const group = PATIENT_MENU[gi]!;
 
+    const groupVisible = group.isVisible ?? true;
     const groupNode = await prisma.appMenuNode.upsert({
       where: { appId_slug: { appId: app.id, slug: group.slug } },
       create: {
@@ -122,14 +136,16 @@ async function main() {
         slug: group.slug,
         type: "GROUP",
         order: gi,
+        isVisible: groupVisible,
         permissionKeys: [],
       },
-      update: { label: group.label, order: gi },
+      update: { label: group.label, order: gi, isVisible: groupVisible },
     });
     console.log(`\n  GROUP: "${group.label}"`);
 
     for (let ii = 0; ii < group.children.length; ii++) {
       const item = group.children[ii]!;
+      const itemVisible = item.isVisible ?? true;
       await prisma.appMenuNode.upsert({
         where: { appId_slug: { appId: app.id, slug: item.slug } },
         create: {
@@ -141,6 +157,7 @@ async function main() {
           icon: item.icon,
           type: "ITEM",
           order: ii,
+          isVisible: itemVisible,
           permissionKeys: [],
         },
         update: {
@@ -149,9 +166,11 @@ async function main() {
           href: item.href,
           icon: item.icon,
           order: ii,
+          isVisible: itemVisible,
         },
       });
-      console.log(`    ITEM: "${item.label}" → ${item.href}`);
+      const tag = itemVisible ? "" : " [hidden — permission only]";
+      console.log(`    ITEM: "${item.label}" → ${item.href}${tag}`);
     }
   }
 

@@ -33,6 +33,7 @@ export const UpdateUserModal = () => {
     values: {
       name: modalData?.userName ?? "",
       email: modalData?.userEmail ?? "",
+      username: modalData?.userUsername ?? "",
       image: modalData?.userImage ?? "",
     },
   });
@@ -59,6 +60,7 @@ export const UpdateUserModal = () => {
         data: {
           name: values.name,
           email: values.email,
+          username: values.username || null,
           image: values.image || null,
         },
       },

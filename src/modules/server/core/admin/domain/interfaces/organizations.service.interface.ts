@@ -45,6 +45,7 @@ export interface IOrganizationsService {
   addTeamMember(payload: TAddTeamMemberServiceSchema): Promise<{ success: boolean }>;
   removeTeamMember(payload: TRemoveTeamMemberValidationSchema): Promise<{ success: boolean }>;
 
+  getOrgRoleRedirects(userId: string, organizationId: string): Promise<Record<string, string>>;
   listOrgRoles(organizationId: string): Promise<TListOrgRolesResponseSchema>;
   createOrgRole(payload: TCreateOrgRoleValidationSchema): Promise<TOrgRoleSchema>;
   updateOrgRole(payload: TUpdateOrgRoleValidationSchema): Promise<TOrgRoleSchema>;

@@ -3,6 +3,7 @@
 import { Controller, useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { FormMessage } from "@/components/ui/form";
 import { Loader2 } from "lucide-react";
@@ -23,6 +24,9 @@ export function UpdateMemberRoleForm({ onSubmit, onCancel, availableRoles }: Upd
   const form = useFormContext<TUpdateMemberRoleValidationSchema>();
   const {
     control,
+    register,
+    getValues,
+    setValue,
     formState: { isSubmitting, errors },
   } = form;
 
@@ -34,28 +38,46 @@ export function UpdateMemberRoleForm({ onSubmit, onCancel, availableRoles }: Upd
           control={control}
           name="roles"
           render={({ field }) => (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
               {availableRoles.map((role) => {
                 const checked = field.value?.includes(role) ?? false;
                 return (
-                  <label
-                    key={role}
-                    className={cn(
-                      "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-sm",
-                      checked && "border-primary bg-primary/5",
+                  <div key={role} className="space-y-1.5">
+                    <label
+                      className={cn(
+                        "flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer text-sm",
+                        checked && "border-primary bg-primary/5",
+                      )}
+                    >
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={(val) => {
+                          const next = val
+                            ? [...(field.value ?? []), role]
+                            : (field.value ?? []).filter((r) => r !== role);
+                          field.onChange(next);
+                          const current = getValues("redirectUrls") ?? {};
+                          if (val) {
+                            if (!current[role]) {
+                              setValue("redirectUrls", { ...current, [role]: "/" });
+                            }
+                          } else {
+                            setValue("redirectUrls", { ...current, [role]: "" });
+                          }
+                        }}
+                      />
+                      {roleLabel(role)}
+                    </label>
+                    {checked && (
+                      <div className="pl-6">
+                        <Input
+                          {...register(`redirectUrls.${role}` as `redirectUrls.${string}`)}
+                          placeholder="Redirect URL (optional)"
+                          className="h-8 text-sm"
+                        />
+                      </div>
                     )}
-                  >
-                    <Checkbox
-                      checked={checked}
-                      onCheckedChange={(val) => {
-                        const next = val
-                          ? [...(field.value ?? []), role]
-                          : (field.value ?? []).filter((r) => r !== role);
-                        field.onChange(next);
-                      }}
-                    />
-                    {roleLabel(role)}
-                  </label>
+                  </div>
                 );
               })}
             </div>

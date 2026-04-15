@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useAdminStore } from "../../stores/admin.store";
 import { useServerAction } from "zsa-react";
@@ -18,8 +19,11 @@ import {
   TUpdateMemberRoleValidationSchema,
   TOrgRoleSchema,
 } from "@/modules/entities/schemas/admin/organizations/organizations.schema";
-import { updateMemberRoleAction } from "@/modules/server/presentation/actions/admin/organizations.action";
-import { listOrgRolesAction } from "@/modules/server/presentation/actions/admin/organizations.action";
+import {
+  updateMemberRoleAction,
+  listOrgRolesAction,
+  getOrgRoleRedirectsAction,
+} from "@/modules/server/presentation/actions/admin/organizations.action";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import { UpdateMemberRoleForm } from "../../forms/organizations/UpdateMemberRoleForm";
 
@@ -34,18 +38,40 @@ export const UpdateMemberRoleModal = () => {
   const isModalOpen = isOpen && modalType === "updateMemberRole";
 
   const [availableRoles, setAvailableRoles] = useState<string[]>(DEFAULT_ROLES);
+  const [existingRedirectUrls, setExistingRedirectUrls] = useState<Record<string, string>>({});
+
+  const { execute: fetchRoles, isPending: isFetchingRoles } = useServerAction(listOrgRolesAction, {
+    onSuccess({ data }) {
+      const customRoles = (data as TOrgRoleSchema[]).map((r) => r.role);
+      const combined = [
+        ...DEFAULT_ROLES,
+        ...customRoles.filter((r) => !DEFAULT_ROLES.includes(r)),
+      ];
+      setAvailableRoles(combined);
+    },
+  });
+
+  const { execute: fetchRedirects, isPending: isFetchingRedirects } = useServerAction(
+    getOrgRoleRedirectsAction,
+    {
+      onSuccess({ data }) {
+        setExistingRedirectUrls((data as Record<string, string>) ?? {});
+      },
+    },
+  );
+
+  const isLoading = isFetchingRoles || isFetchingRedirects;
 
   useEffect(() => {
     if (!isModalOpen || !modalData?.organizationId) return;
-    void (async () => {
-      const [data] = await listOrgRolesAction({ organizationId: modalData.organizationId! });
-      if (data) {
-        const customRoles = (data as TOrgRoleSchema[]).map((r) => r.role);
-        const combined = [...DEFAULT_ROLES, ...customRoles.filter((r: string) => !DEFAULT_ROLES.includes(r))];
-        setAvailableRoles(combined);
-      }
-    })();
-  }, [isModalOpen, modalData?.organizationId]);
+    void fetchRoles({ organizationId: modalData.organizationId! });
+    if (modalData.memberUserId) {
+      void fetchRedirects({
+        userId: modalData.memberUserId,
+        organizationId: modalData.organizationId!,
+      });
+    }
+  }, [isModalOpen, modalData?.organizationId, modalData?.memberUserId]);
 
   const form = useForm<TUpdateMemberRoleValidationSchema>({
     resolver: zodResolver(UpdateMemberRoleValidationSchema),
@@ -53,6 +79,7 @@ export const UpdateMemberRoleModal = () => {
       memberId: modalData?.memberId ?? "",
       organizationId: modalData?.organizationId ?? "",
       roles: modalData?.memberRoles ?? [],
+      redirectUrls: existingRedirectUrls,
     },
   });
 
@@ -83,6 +110,7 @@ export const UpdateMemberRoleModal = () => {
   function handleClose() {
     form.reset();
     setAvailableRoles(DEFAULT_ROLES);
+    setExistingRedirectUrls({});
     closeModal();
   }
 
@@ -95,13 +123,31 @@ export const UpdateMemberRoleModal = () => {
             Change the role of <span className="font-semibold">{modalData?.memberName}</span>.
           </DialogDescription>
         </DialogHeader>
-        <FormProvider {...form}>
-          <UpdateMemberRoleForm
-            onSubmit={handleSubmit}
-            onCancel={handleClose}
-            availableRoles={availableRoles}
-          />
-        </FormProvider>
+
+        {isLoading ? (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-10" />
+              <div className="space-y-2">
+                {DEFAULT_ROLES.map((r) => (
+                  <Skeleton key={r} className="h-9 w-full rounded-md" />
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+            </div>
+          </div>
+        ) : (
+          <FormProvider {...form}>
+            <UpdateMemberRoleForm
+              onSubmit={handleSubmit}
+              onCancel={handleClose}
+              availableRoles={availableRoles}
+            />
+          </FormProvider>
+        )}
       </DialogContent>
     </Dialog>
   );

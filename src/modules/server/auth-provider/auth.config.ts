@@ -74,7 +74,7 @@ async function buildUserContext(userId: string, organizationId: string | null) {
     ReturnType<typeof prisma.appMenuNode.findMany>
   >[number];
 
-  const [permSet, memberships, appsData] = await Promise.all([
+  const [permSet, memberships, appsData, userCtx] = await Promise.all([
     organizationId
       ? getUserPermissions(userId, organizationId)
       : Promise.resolve(new Set<string>()),
@@ -96,6 +96,10 @@ async function buildUserContext(userId: string, organizationId: string | null) {
           orderBy: { order: "asc" },
         },
       },
+    }),
+    prisma.userContext.findUnique({
+      where: { userId },
+      select: { activeRoleId: true },
     }),
   ]);
 
@@ -148,17 +152,48 @@ async function buildUserContext(userId: string, organizationId: string | null) {
   }));
 
   const rawRole = organizationId
-    ? (memberships.find((m) => m.organization.id === organizationId)?.role ?? null)
+    ? (memberships.find((m) => m.organization.id === organizationId)?.role ??
+      null)
     : null;
   const activeOrganizationRoles = rawRole
     ? rawRole.split(",").map((r) => r.trim())
     : [];
+
+  const activeRoleId = userCtx?.activeRoleId ?? null;
+
+  let activeRole: string | null = null;
+  let activeRoleRedirectUrl: string | null = null;
+
+  if (activeRoleId) {
+    const orgRole = await prisma.organizationRole.findUnique({
+      where: { id: activeRoleId },
+      select: { role: true },
+    });
+    activeRole = orgRole?.role ?? null;
+
+    if (activeRole && organizationId) {
+      const redirect = await prisma.userOrgRoleRedirect.findUnique({
+        where: {
+          userId_organizationId_role: {
+            userId,
+            organizationId,
+            role: activeRole,
+          },
+        },
+        select: { redirectUrl: true },
+      });
+      activeRoleRedirectUrl = redirect?.redirectUrl ?? null;
+    }
+  }
 
   return {
     apps,
     permissions: Array.from(permSet),
     organizations,
     activeOrganizationRoles,
+    activeRoleId,
+    activeRole,
+    activeRoleRedirectUrl,
   };
 }
 
@@ -211,31 +246,64 @@ export const authConfig = {
     user: {
       create: {
         after: async (user) => {
-          // Auto-add every new signup to the drgodly organization as a member.
           try {
+            // 1. Fetch org first — its id is needed for all subsequent queries
             const org = await prisma.organization.findUnique({
               where: { slug: "drgodly" },
               select: { id: true },
             });
             if (!org) return;
 
-            const alreadyMember = await prisma.member.findFirst({
-              where: { organizationId: org.id, userId: user.id },
-              select: { id: true },
-            });
+            // 2. Fetch patient role + membership check in parallel using org.id
+            const [patientOrgRole, alreadyMember] = await Promise.all([
+              prisma.organizationRole.findFirst({
+                where: { organizationId: org.id, role: "patient" },
+                select: { id: true, role: true },
+              }),
+              prisma.member.findFirst({
+                where: { organizationId: org.id, userId: user.id },
+                select: { id: true },
+              }),
+            ]);
+
+            // Skip if already a member
             if (alreadyMember) return;
 
-            await prisma.member.create({
-              data: {
-                id: randomUUID(),
-                organizationId: org.id,
-                userId: user.id,
-                role: "member",
-                createdAt: new Date(),
-              },
+            const memberRole = patientOrgRole ? "patient" : "member";
+
+            // 3. Create member + redirect + context atomically
+            await prisma.$transaction(async (tx) => {
+              await tx.member.create({
+                data: {
+                  id: randomUUID(),
+                  organizationId: org.id,
+                  userId: user.id,
+                  role: memberRole,
+                  createdAt: new Date(),
+                },
+              });
+
+              if (patientOrgRole) {
+                await tx.userOrgRoleRedirect.create({
+                  data: {
+                    userId: user.id,
+                    organizationId: org.id,
+                    role: patientOrgRole.role,
+                    redirectUrl: "/bezs/telemedicine/patient",
+                  },
+                });
+              }
+
+              await tx.userContext.create({
+                data: {
+                  userId: user.id,
+                  activeOrganizationId: org.id,
+                  activeRoleId: patientOrgRole?.id ?? null,
+                },
+              });
             });
           } catch {
-            // Do not block signup if the org doesn't exist yet
+            // Do not block signup if the org or roles are not set up yet
           }
         },
       },
@@ -244,18 +312,29 @@ export const authConfig = {
     session: {
       create: {
         before: async (session) => {
-          // Auto-set the active organization to the user's first membership
-          // so that activeOrganizationId is never null on a fresh session.
-          const membership = await prisma.member.findFirst({
-            where: { userId: session.userId },
-            orderBy: { createdAt: "asc" },
-            select: { organizationId: true },
-          });
+          // Prefer the activeOrganizationId stored in UserContext (set by admin).
+          // Fall back to the user's earliest membership if no context exists yet.
+          const [userCtx, firstMembership] = await Promise.all([
+            prisma.userContext.findUnique({
+              where: { userId: session.userId },
+              select: { activeOrganizationId: true },
+            }),
+            prisma.member.findFirst({
+              where: { userId: session.userId },
+              orderBy: { createdAt: "asc" },
+              select: { organizationId: true },
+            }),
+          ]);
+
+          const activeOrganizationId =
+            userCtx?.activeOrganizationId ??
+            firstMembership?.organizationId ??
+            null;
 
           return {
             data: {
               ...session,
-              activeOrganizationId: membership?.organizationId ?? null,
+              activeOrganizationId,
             },
           };
         },

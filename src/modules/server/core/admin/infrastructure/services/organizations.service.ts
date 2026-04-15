@@ -480,6 +480,51 @@ export class OrganizationsService implements IOrganizationsService {
         },
         headers: await headers(),
       });
+
+      // Persist redirect URLs — isolated so a failure never aborts the role update
+      try {
+        const member = await prisma.member.findUnique({
+          where: { id: payload.memberId },
+          select: { userId: true },
+        });
+        console.log({ member });
+        if (member) {
+          const { redirectUrls = {} } = payload;
+          const rolesToCreate = payload.roles.filter(
+            (role) => !!redirectUrls[role],
+          );
+
+          await prisma.$transaction(async (tx) => {
+            await tx.userOrgRoleRedirect.deleteMany({
+              where: {
+                userId: member.userId,
+                organizationId: payload.organizationId,
+              },
+            });
+
+            if (rolesToCreate.length > 0) {
+              const userOrgRoleRedirectData = rolesToCreate.map((role) => ({
+                userId: member.userId,
+                organizationId: payload.organizationId,
+                role,
+                redirectUrl: redirectUrls[role],
+              }));
+
+              await tx.userOrgRoleRedirect.createMany({
+                data: userOrgRoleRedirectData,
+              });
+            }
+          });
+        }
+      } catch (redirectError) {
+        logOperation("error", {
+          name: "OrganizationsService.updateMemberRole.persistRedirects",
+          startTimeMs: Date.now(),
+          err: redirectError,
+          context: { operationId, memberId: payload.memberId },
+        });
+      }
+
       const data = { success: true };
       logOperation("success", {
         name: "OrganizationsService.updateMemberRole",
@@ -497,6 +542,16 @@ export class OrganizationsService implements IOrganizationsService {
       });
       mapBetterAuthError(error, "Failed to update member role");
     }
+  }
+
+  async getOrgRoleRedirects(
+    userId: string,
+    organizationId: string,
+  ): Promise<Record<string, string>> {
+    const rows = await prisma.userOrgRoleRedirect.findMany({
+      where: { userId, organizationId },
+    });
+    return Object.fromEntries(rows.map((r) => [r.role, r.redirectUrl]));
   }
 
   async removeMember(
@@ -720,7 +775,10 @@ export class OrganizationsService implements IOrganizationsService {
     }
   }
 
-  async isMemberInOrg(organizationId: string, userId: string): Promise<boolean> {
+  async isMemberInOrg(
+    organizationId: string,
+    userId: string,
+  ): Promise<boolean> {
     const member = await prisma.member.findFirst({
       where: { organizationId, userId },
       select: { id: true },
@@ -816,7 +874,9 @@ export class OrganizationsService implements IOrganizationsService {
     }
   }
 
-  async listOrgRoles(organizationId: string): Promise<TListOrgRolesResponseSchema> {
+  async listOrgRoles(
+    organizationId: string,
+  ): Promise<TListOrgRolesResponseSchema> {
     const rows = await prisma.organizationRole.findMany({
       where: { organizationId },
       orderBy: { role: "asc" },
@@ -829,7 +889,9 @@ export class OrganizationsService implements IOrganizationsService {
     return ListOrgRolesResponseSchema.parse({ roles });
   }
 
-  async createOrgRole(payload: TCreateOrgRoleValidationSchema): Promise<TOrgRoleSchema> {
+  async createOrgRole(
+    payload: TCreateOrgRoleValidationSchema,
+  ): Promise<TOrgRoleSchema> {
     const now = new Date();
     await prisma.organizationRole.create({
       data: {
@@ -839,10 +901,16 @@ export class OrganizationsService implements IOrganizationsService {
         permission: orgPermissionKeysToJson(payload.permissions),
       },
     });
-    return OrgRoleSchema.parse({ role: payload.role, permissions: payload.permissions, createdAt: now });
+    return OrgRoleSchema.parse({
+      role: payload.role,
+      permissions: payload.permissions,
+      createdAt: now,
+    });
   }
 
-  async updateOrgRole(payload: TUpdateOrgRoleValidationSchema): Promise<TOrgRoleSchema> {
+  async updateOrgRole(
+    payload: TUpdateOrgRoleValidationSchema,
+  ): Promise<TOrgRoleSchema> {
     const existing = await prisma.organizationRole.findFirst({
       where: { organizationId: payload.organizationId, role: payload.role },
     });
@@ -872,7 +940,9 @@ export class OrganizationsService implements IOrganizationsService {
     });
   }
 
-  async deleteOrgRole(payload: TDeleteOrgRoleValidationSchema): Promise<{ success: boolean }> {
+  async deleteOrgRole(
+    payload: TDeleteOrgRoleValidationSchema,
+  ): Promise<{ success: boolean }> {
     await prisma.organizationRole.deleteMany({
       where: { organizationId: payload.organizationId, role: payload.role },
     });

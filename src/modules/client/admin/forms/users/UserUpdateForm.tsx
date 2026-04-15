@@ -37,6 +37,14 @@ export function UserUpdateForm({ onSubmit, onCancel }: UserUpdateFormProps) {
       />
       <FormInput
         control={control}
+        name="username"
+        label="Username"
+        placeholder="e.g. john_doe"
+        description="Optional. Lowercase, numbers, _ and - only."
+        descriptionPlace="bottom"
+      />
+      <FormInput
+        control={control}
         name="image"
         label="Avatar URL"
         placeholder="https://example.com/avatar.png"

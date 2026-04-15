@@ -10,6 +10,7 @@ interface NavNode {
   icon: string | null;
   href: string | null;
   type: string;
+  isVisible: boolean;
   permissionKeys: string[];
   children: NavNode[];
 }
@@ -99,6 +100,7 @@ export async function GET(req: NextRequest) {
             icon: n.icon ?? null,
             href: n.href ?? null,
             type: n.type,
+            isVisible: n.isVisible,
             permissionKeys: n.permissionKeys,
             children,
           },

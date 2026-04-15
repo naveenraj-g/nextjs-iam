@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useAdminStore } from "../../stores/admin.store";
 import { useServerAction } from "zsa-react";
@@ -36,14 +37,24 @@ export const CreateMenuNodeModal = () => {
   const [parentNodes, setParentNodes] = useState<{ id: string; label: string }[]>([]);
   const [availableActions, setAvailableActions] = useState<{ key: string; name: string }[]>([]);
 
+  const { execute: fetchNodes, isPending: isFetchingNodes } = useServerAction(listMenuNodesAction, {
+    onSuccess({ data }) {
+      setParentNodes(data.map((n) => ({ id: n.id, label: n.label })));
+    },
+  });
+
+  const { execute: fetchActions, isPending: isFetchingActions } = useServerAction(listActionsAction, {
+    onSuccess({ data }) {
+      setAvailableActions(data.map((a) => ({ key: a.key, name: a.name })));
+    },
+  });
+
+  const isLoading = isFetchingNodes || isFetchingActions;
+
   useEffect(() => {
     if (!isModalOpen || !modalData?.menuNodeAppId) return;
-    listMenuNodesAction({ appId: modalData.menuNodeAppId }).then(([data]) => {
-      if (data) setParentNodes(data.map((n) => ({ id: n.id, label: n.label })));
-    });
-    listActionsAction().then(([data]) => {
-      if (data) setAvailableActions(data.map((a) => ({ key: a.key, name: a.name })));
-    });
+    void fetchNodes({ appId: modalData.menuNodeAppId });
+    void fetchActions();
   }, [isModalOpen, modalData?.menuNodeAppId]);
 
   const form = useForm<TUpdateMenuNodeFormSchema>({
@@ -57,6 +68,7 @@ export const CreateMenuNodeModal = () => {
       href: "",
       order: 0,
       isActive: true,
+      isVisible: true,
       permissionKeys: [],
     },
   });
@@ -87,6 +99,7 @@ export const CreateMenuNodeModal = () => {
         icon: values.icon || undefined,
         href: values.href || undefined,
         order: values.order,
+        isVisible: values.isVisible,
         permissionKeys: values.permissionKeys,
       },
       transportOptions: {
@@ -112,16 +125,44 @@ export const CreateMenuNodeModal = () => {
             Add a new menu node to this application.
           </DialogDescription>
         </DialogHeader>
-        <FormProvider {...form}>
-          <MenuNodeForm
-            onSubmit={handleSubmit}
-            onCancel={handleClose}
-            appId={modalData?.menuNodeAppId ?? ""}
-            parentNodes={parentNodes}
-            availableActions={availableActions}
-            submitLabel="Create Node"
-          />
-        </FormProvider>
+
+        {isLoading ? (
+          <div className="space-y-4">
+            {/* Label, Slug, Type, Parent, Icon, Href */}
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="space-y-1.5">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            ))}
+            {/* Visible switch */}
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-5 w-9 rounded-full" />
+              <Skeleton className="h-4 w-14" />
+            </div>
+            {/* Permission Keys */}
+            <div className="space-y-1.5">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-3 w-52" />
+              <Skeleton className="h-8 w-full" />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Skeleton className="h-9 w-20 rounded-md" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+            </div>
+          </div>
+        ) : (
+          <FormProvider {...form}>
+            <MenuNodeForm
+              onSubmit={handleSubmit}
+              onCancel={handleClose}
+              appId={modalData?.menuNodeAppId ?? ""}
+              parentNodes={parentNodes}
+              availableActions={availableActions}
+              submitLabel="Create Node"
+            />
+          </FormProvider>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -162,6 +162,7 @@ export const UpdateMemberRoleValidationSchema = z.object({
   memberId: z.string(),
   organizationId: z.string(),
   roles: z.array(z.string()).min(1, "Select at least one role"),
+  redirectUrls: z.record(z.string(), z.string()).optional().default({}),
 });
 
 export const UpdateMemberRoleActionSchema = z.object({

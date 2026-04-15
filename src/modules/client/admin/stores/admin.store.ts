@@ -77,13 +77,16 @@ export type ModalType =
   // Preference Templates
   | "createPreferenceTemplate"
   | "editPreferenceTemplate"
-  | "deletePreferenceTemplate";
+  | "deletePreferenceTemplate"
+  // User Context
+  | "setUserContext";
 
 export interface ModalData {
   // Users
   userId?: string;
   userName?: string;
   userEmail?: string;
+  userUsername?: string | null;
   userImage?: string | null;
   currentRole?: string | null;
   isBanned?: boolean;
@@ -152,6 +155,7 @@ export interface ModalData {
   menuNodeHref?: string | null;
   menuNodeType?: "GROUP" | "ITEM";
   menuNodeIsActive?: boolean;
+  menuNodeIsVisible?: boolean;
   menuNodeAppId?: string;
   menuNodePermissionKeys?: string[];
   menuNodeOrder?: number;
@@ -188,6 +192,12 @@ export interface ModalData {
   preferenceTemplateCurrency?: string | null;
   preferenceTemplateNumberFormat?: string | null;
   preferenceTemplateWeekStart?: string | null;
+  // User Context
+  userContextUserId?: string;
+  userContextUserName?: string;
+  userContextUserEmail?: string;
+  userContextActiveOrganizationId?: string | null;
+  userContextActiveRoleId?: string | null;
 }
 
 interface IAdminStore {

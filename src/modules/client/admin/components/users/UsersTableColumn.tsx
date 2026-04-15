@@ -182,6 +182,7 @@ export const usersTableColumn = (): ColumnDef<TUser>[] => [
         userId: user.id,
         userName: user.name,
         userEmail: user.email,
+        userUsername: user.username ?? null,
         userImage: user.image ?? null,
         currentRole: user.role,
         isBanned: user.banned ?? false,

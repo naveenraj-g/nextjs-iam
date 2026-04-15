@@ -29,7 +29,7 @@ export const CreateUserModal = () => {
 
   const form = useForm<TCreateUserFormSchema>({
     resolver: zodResolver(CreateUserFormSchema),
-    defaultValues: { role: "guest" },
+    defaultValues: { name: "", email: "", username: "", password: "", role: "guest" },
   });
 
   const { execute } = useServerAction(createUserAction, {

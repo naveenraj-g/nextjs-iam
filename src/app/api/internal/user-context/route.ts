@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
     where: { userId },
     select: {
       activeOrganizationId: true,
-      redirectAfterLogin: true,
+      activeRoleId: true,
     },
   });
 
