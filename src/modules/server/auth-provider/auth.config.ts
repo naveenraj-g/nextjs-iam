@@ -246,6 +246,8 @@ export const authConfig = {
     user: {
       create: {
         after: async (user) => {
+          console.log(user);
+
           try {
             // 1. Fetch org first — its id is needed for all subsequent queries
             const org = await prisma.organization.findUnique({
@@ -304,6 +306,52 @@ export const authConfig = {
             });
           } catch {
             // Do not block signup if the org or roles are not set up yet
+          }
+        },
+        before: async (user) => {
+          // Generate username for OAuth users who don't have one
+          if (!user.username) {
+            try {
+              const base =
+                user.name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]/g, "")
+                  .slice(0, 20) || "user";
+
+              let username = "";
+              for (let i = 0; i < 10; i++) {
+                const suffix = Math.floor(1000 + Math.random() * 9000);
+                const candidate = `${base}${suffix}`;
+                const existing = await prisma.user.findFirst({
+                  where: { username: candidate },
+                  select: { id: true },
+                });
+                if (!existing) {
+                  username = candidate;
+                  break;
+                }
+              }
+
+              // if (username) {
+              //   await prisma.user.update({
+              //     where: { id: user.id },
+              //     data: { username },
+              //   });
+              // }
+              return {
+                data: {
+                  ...user,
+                  username,
+                },
+              };
+            } catch {
+              return {
+                data: {
+                  ...user,
+                },
+              };
+              // Don't block signup if username generation fails
+            }
           }
         },
       },
