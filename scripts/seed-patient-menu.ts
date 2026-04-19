@@ -249,6 +249,45 @@ async function main() {
   });
   console.log(`\n  "${resource.name}" linked to app "${app.name}"`);
 
+  // ── Phase 4b: API Resources & Actions ────────────────────────────
+  console.log(
+    "\n━━━ Phase 4b: API Resources & Actions ━━━━━━━━━━━━━━━━━━━━━━━",
+  );
+
+  const API_RESOURCES: { name: string; actions: string[] }[] = [
+    { name: "patient",                actions: ["create", "read", "update", "delete"] },
+    { name: "appointment",            actions: ["create", "read", "update", "delete"] },
+    { name: "encounter",              actions: ["create", "read", "update", "delete"] },
+    { name: "questionnaire_response", actions: ["create", "read", "update", "delete"] },
+    { name: "consultagent",           actions: ["chat"] },
+    { name: "agent",                  actions: ["chat"] },
+  ];
+
+  for (const apiRes of API_RESOURCES) {
+    const res = await prisma.resource.upsert({
+      where: { name: apiRes.name },
+      create: { name: apiRes.name, description: `${apiRes.name} API resource` },
+      update: { description: `${apiRes.name} API resource` },
+    });
+    console.log(`\n  Resource: "${res.name}" (${res.id})`);
+
+    for (const action of apiRes.actions) {
+      const key = `${apiRes.name}:${action}`;
+      const ra = await prisma.resourceAction.upsert({
+        where: { key },
+        create: { resourceId: res.id, name: `${apiRes.name} ${action}`, key, description: `${action} on ${apiRes.name}` },
+        update: { name: `${apiRes.name} ${action}`, description: `${action} on ${apiRes.name}` },
+      });
+      console.log(`    Action: ${ra.key}`);
+    }
+
+    await prisma.appResource.upsert({
+      where: { appId_resourceId: { appId: app.id, resourceId: res.id } },
+      create: { appId: app.id, resourceId: res.id },
+      update: {},
+    });
+  }
+
   // ── Phase 5: Set permissionKeys on each ITEM menu node ────────────
   console.log(
     "\n━━━ Phase 5: Menu Node permissionKeys ━━━━━━━━━━━━━━━━━━━━━━━",
