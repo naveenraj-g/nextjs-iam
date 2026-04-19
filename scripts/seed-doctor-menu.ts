@@ -83,7 +83,13 @@ const SUB_GROUPS: {
   slug: string;
   icon: string;
   isVisible?: boolean;
-  items: { label: string; slug: string; href: string; icon: string; isVisible?: boolean }[];
+  items: {
+    label: string;
+    slug: string;
+    href: string;
+    icon: string;
+    isVisible?: boolean;
+  }[];
 }[] = [
   {
     label: "Professional Settings",
@@ -348,10 +354,21 @@ async function main() {
     "\n━━━ Phase 7: Org Role Permissions ━━━━━━━━━━━━━━━━━━━━━━━━━━━",
   );
 
+  // Build permission map: menu-based slugs + API-level resource permissions
   const permissionMap: Record<string, string[]> = {};
   for (const item of ALL_LEAF_ITEMS) {
     permissionMap[item.slug] = ["read"];
   }
+  // API permissions — doctor has all except patient:*, consultagent:chat, agent:chat
+  permissionMap["practitioner"] = ["create", "read", "update", "delete"];
+  permissionMap["appointment"] = ["create", "read", "update", "delete"];
+  permissionMap["encounter"] = ["create", "read", "update", "delete"];
+  permissionMap["questionnaire_response"] = [
+    "create",
+    "read",
+    "update",
+    "delete",
+  ];
   const permissionJson = JSON.stringify(permissionMap);
 
   const existingOrgRole = await prisma.organizationRole.findFirst({
@@ -376,7 +393,9 @@ async function main() {
     console.log(`\n  Role "${DOCTOR_ROLE}" created.`);
   }
 
-  const grantedKeys = ALL_LEAF_ITEMS.map((i) => permKey(i.slug));
+  const grantedKeys = Object.entries(permissionMap).flatMap(([res, actions]) =>
+    actions.map((a) => `${res}:${a}`),
+  );
   console.log(`\n  Granted ${grantedKeys.length} permissions:`);
   console.log(`  ${grantedKeys.join(", ")}`);
 

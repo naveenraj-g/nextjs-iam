@@ -102,6 +102,7 @@ export async function proxy(req: NextRequest) {
         "Cache-Control": "no-cache, no-store, must-revalidate",
       },
       cache: "no-store",
+      credentials: "same-origin",
     });
 
     const session = sessionRes.ok ? await sessionRes.json() : null;

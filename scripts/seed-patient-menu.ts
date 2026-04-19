@@ -75,6 +75,18 @@ const PATIENT_MENU: {
         href: "/bezs/telemedicine/patient/appointments/intake",
         icon: "calendar-plus",
       },
+      {
+        label: "AI Pre-Consultation",
+        slug: "ai-pre-consultation",
+        href: "/bezs/telemedicine/patient/intake",
+        icon: "clipboard-list",
+      },
+      {
+        label: "AI Consultation",
+        slug: "ai-consultation",
+        href: "/bezs/telemedicine/patient/consultation",
+        icon: "stethoscope",
+      },
     ],
   },
 ];
@@ -268,11 +280,23 @@ async function main() {
     "\n━━━ Phase 6: Org Role Permissions ━━━━━━━━━━━━━━━━━━━━━━━━━━━",
   );
 
-  // Build permission map: { [itemSlug]: ["read"] }
+  // Build permission map: menu-based slugs + API-level resource permissions
   const permissionMap: Record<string, string[]> = {};
   for (const item of allItems) {
     permissionMap[item.slug] = ["read"];
   }
+  // API permissions — patient has all except practitioner:*
+  permissionMap["patient"] = ["create", "read", "update", "delete"];
+  permissionMap["appointment"] = ["create", "read", "update", "delete"];
+  permissionMap["encounter"] = ["create", "read", "update", "delete"];
+  permissionMap["questionnaire_response"] = [
+    "create",
+    "read",
+    "update",
+    "delete",
+  ];
+  permissionMap["consultagent"] = ["chat"];
+  permissionMap["agent"] = ["chat"];
   const permissionJson = JSON.stringify(permissionMap);
 
   const existingOrgRole = await prisma.organizationRole.findFirst({
@@ -297,7 +321,9 @@ async function main() {
     console.log(`\n  Role "${PATIENT_ROLE}" created.`);
   }
 
-  const grantedKeys = allItems.map((i) => permKey(i.slug));
+  const grantedKeys = Object.entries(permissionMap).flatMap(([res, actions]) =>
+    actions.map((a) => `${res}:${a}`),
+  );
   console.log(`\n  Granted ${grantedKeys.length} permissions:`);
   console.log(`  ${grantedKeys.join(", ")}`);
 
