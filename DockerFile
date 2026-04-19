@@ -38,4 +38,4 @@ RUN apk add --no-cache netcat-openbsd
 EXPOSE 3000
 
 # Wait for DB → run seed → start app
-CMD ["sh", "-c", "until nc -z iam-postgres 5432; do echo 'Waiting for DB...'; sleep 2; done; pnpm prisma migrate deploy && pnpm run seed:admin && pnpm start"]
+CMD ["sh", "-c", "until nc -z iam-postgres 5432; do echo 'Waiting for DB...'; sleep 2; done; pnpm prisma migrate deploy && pnpm run seed:admin && pnpm run seed:patient-menu && pnpm run seed:doctor-menu && pnpm run seed:telemedicine-app-admin-menu && pnpm start"]

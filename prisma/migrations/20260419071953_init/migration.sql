@@ -1,6 +1,9 @@
 -- CreateEnum
 CREATE TYPE "MenuNodeType" AS ENUM ('GROUP', 'ITEM');
 
+-- CreateEnum
+CREATE TYPE "PreferenceScope" AS ENUM ('GLOBAL', 'COUNTRY');
+
 -- CreateTable
 CREATE TABLE "user" (
     "id" TEXT NOT NULL,
@@ -382,6 +385,7 @@ CREATE TABLE "appMenuNode" (
     "order" INTEGER NOT NULL DEFAULT 0,
     "type" "MenuNodeType" NOT NULL DEFAULT 'ITEM',
     "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "isVisible" BOOLEAN NOT NULL DEFAULT true,
     "permissionKeys" TEXT[],
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -422,6 +426,65 @@ CREATE TABLE "appAction" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "appAction_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "userPreference" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "timezone" TEXT DEFAULT 'Asia/Kolkata',
+    "dateFormat" TEXT DEFAULT 'DD/MM/YYYY',
+    "timeFormat" TEXT DEFAULT 'hh:mm A',
+    "country" TEXT DEFAULT 'IN',
+    "currency" TEXT DEFAULT 'INR',
+    "numberFormat" TEXT DEFAULT '1,23,456.78',
+    "weekStart" TEXT DEFAULT 'monday',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "userPreference_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "preferenceTemplate" (
+    "id" TEXT NOT NULL,
+    "scope" "PreferenceScope" NOT NULL DEFAULT 'GLOBAL',
+    "country" TEXT,
+    "timezone" TEXT DEFAULT 'UTC',
+    "dateFormat" TEXT DEFAULT 'DD/MM/YYYY',
+    "timeFormat" TEXT DEFAULT 'HH:mm',
+    "currency" TEXT DEFAULT 'USD',
+    "numberFormat" TEXT DEFAULT '1,234.56',
+    "weekStart" TEXT DEFAULT 'monday',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "preferenceTemplate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "userContext" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "activeOrganizationId" TEXT,
+    "activeRoleId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "userContext_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "userOrgRoleRedirect" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "organizationId" TEXT NOT NULL,
+    "role" TEXT NOT NULL,
+    "redirectUrl" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "userOrgRoleRedirect_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -580,6 +643,27 @@ CREATE INDEX "appAction_resourceId_idx" ON "appAction"("resourceId");
 -- CreateIndex
 CREATE UNIQUE INDEX "appAction_resourceId_name_key" ON "appAction"("resourceId", "name");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "userPreference_userId_key" ON "userPreference"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "preferenceTemplate_scope_country_key" ON "preferenceTemplate"("scope", "country");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "userContext_userId_key" ON "userContext"("userId");
+
+-- CreateIndex
+CREATE INDEX "userContext_userId_idx" ON "userContext"("userId");
+
+-- CreateIndex
+CREATE INDEX "userOrgRoleRedirect_userId_idx" ON "userOrgRoleRedirect"("userId");
+
+-- CreateIndex
+CREATE INDEX "userOrgRoleRedirect_organizationId_idx" ON "userOrgRoleRedirect"("organizationId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "userOrgRoleRedirect_userId_organizationId_role_key" ON "userOrgRoleRedirect"("userId", "organizationId", "role");
+
 -- AddForeignKey
 ALTER TABLE "session" ADD CONSTRAINT "session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
@@ -681,3 +765,9 @@ ALTER TABLE "AppResource" ADD CONSTRAINT "AppResource_resourceId_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "appAction" ADD CONSTRAINT "appAction_resourceId_fkey" FOREIGN KEY ("resourceId") REFERENCES "Resource"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "userPreference" ADD CONSTRAINT "userPreference_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "userContext" ADD CONSTRAINT "userContext_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

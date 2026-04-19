@@ -1,12 +1,19 @@
 import { jwtVerify, createRemoteJWKSet, errors as JoseErrors } from "jose";
 
-const JWKS = createRemoteJWKSet(
-  new URL(`${process.env.BETTER_AUTH_URL}/api/auth/jwks`),
-);
+let JWKS: ReturnType<typeof createRemoteJWKSet> | null = null;
+
+function getJWKS() {
+  if (!JWKS) {
+    JWKS = createRemoteJWKSet(
+      new URL(`${process.env.BETTER_AUTH_URL}/api/auth/jwks`),
+    );
+  }
+  return JWKS;
+}
 
 export async function verifyAccessToken(token: string) {
   try {
-    const { payload } = await jwtVerify(token, JWKS, {
+    const { payload } = await jwtVerify(token, getJWKS(), {
       issuer: process.env.BETTER_AUTH_URL,
       audience: process.env.BETTER_AUTH_URL,
     });
