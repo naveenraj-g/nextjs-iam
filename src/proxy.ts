@@ -95,28 +95,28 @@ export async function proxy(req: NextRequest) {
    * ✅ 2. Admin auth guard
    * =========================
    */
-  if (ADMIN_PATTERN.test(pathname)) {
-    const sessionRes = await fetch(`${baseUrl}/api/auth/get-session`, {
-      headers: {
-        cookie: req.headers.get("cookie") ?? "",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-      },
-      cache: "no-store",
-      credentials: "same-origin",
-    });
+  // if (ADMIN_PATTERN.test(pathname)) {
+  //   const sessionRes = await fetch(`${baseUrl}/api/auth/get-session`, {
+  //     headers: {
+  //       cookie: req.headers.get("cookie") ?? "",
+  //       "Cache-Control": "no-cache, no-store, must-revalidate",
+  //     },
+  //     cache: "no-store",
+  //     credentials: "same-origin",
+  //   });
 
-    const session = sessionRes.ok ? await sessionRes.json() : null;
+  //   const session = sessionRes.ok ? await sessionRes.json() : null;
 
-    if (!session?.user) {
-      const signInUrl = new URL("/auth/sign-in", req.url);
-      signInUrl.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(signInUrl);
-    }
+  //   if (!session?.user) {
+  //     const signInUrl = new URL("/auth/sign-in", req.url);
+  //     signInUrl.searchParams.set("callbackUrl", pathname);
+  //     return NextResponse.redirect(signInUrl);
+  //   }
 
-    if (session.user.role !== "superadmin") {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-  }
+  //   if (session.user.role !== "superadmin") {
+  //     return NextResponse.redirect(new URL("/", req.url));
+  //   }
+  // }
 
   /**
    * =========================
