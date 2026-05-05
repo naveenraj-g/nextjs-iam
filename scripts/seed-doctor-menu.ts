@@ -46,7 +46,7 @@ const DOCTOR_ROLE = "doctor";
 // Menu definition
 // ------------------------------------------------------------------ //
 
-const TOP_GROUP = { label: "DOCTOR", slug: "doctor" };
+const TOP_GROUP = { label: "DOCTOR", slug: "doctor", isVisible: true };
 
 /** Items hanging directly from the top group */
 const DIRECT_ITEMS: {
@@ -54,19 +54,21 @@ const DIRECT_ITEMS: {
   slug: string;
   href: string;
   icon: string;
-  isVisible?: boolean;
+  isVisible: boolean;
 }[] = [
   {
     label: "Dashboard",
     slug: "doctor-dashboard",
     href: "/bezs/telemedicine/doctor",
     icon: "layout-dashboard",
+    isVisible: true,
   },
   {
     label: "Appointments",
     slug: "doctor-appointments",
     href: "/bezs/telemedicine/doctor/appointments",
     icon: "calendar-plus",
+    isVisible: true,
   },
   {
     label: "Online Consultation",
@@ -82,31 +84,34 @@ const SUB_GROUPS: {
   label: string;
   slug: string;
   icon: string;
-  isVisible?: boolean;
+  isVisible: boolean;
   items: {
     label: string;
     slug: string;
     href: string;
     icon: string;
-    isVisible?: boolean;
+    isVisible: boolean;
   }[];
 }[] = [
   {
     label: "Professional Settings",
     slug: "doctor-professional-settings",
     icon: "stethoscope",
+    isVisible: true,
     items: [
       {
         label: "Services",
         slug: "doctor-services",
         href: "/bezs/telemedicine/doctor/settings/services",
         icon: "briefcase-medical",
+        isVisible: true,
       },
       {
         label: "Availability",
         slug: "doctor-availability",
         href: "/bezs/telemedicine/doctor/settings/availability",
         icon: "calendar-clock",
+        isVisible: true,
       },
     ],
   },
@@ -114,12 +119,14 @@ const SUB_GROUPS: {
     label: "Settings",
     slug: "doctor-settings",
     icon: "settings-2",
+    isVisible: true,
     items: [
       {
         label: "Profile",
         slug: "doctor-profile",
         href: "/bezs/telemedicine/doctor/settings/profile",
         icon: "user-cog",
+        isVisible: true,
       },
     ],
   },
@@ -172,9 +179,10 @@ async function main() {
       slug: TOP_GROUP.slug,
       type: "GROUP",
       order: 0,
+      isVisible: true,
       permissionKeys: [],
     },
-    update: { label: TOP_GROUP.label },
+    update: { label: TOP_GROUP.label, isVisible: true },
   });
   console.log(`\n  GROUP: "${TOP_GROUP.label}" (${topGroup.id})`);
 

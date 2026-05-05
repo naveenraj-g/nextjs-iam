@@ -42,115 +42,147 @@ const seedAuth = betterAuth({
 const ADMIN_MENU: {
   label: string;
   slug: string;
-  children: { label: string; slug: string; href: string; icon: string }[];
+  icon: string;
+  isVisible: boolean;
+  children: {
+    label: string;
+    slug: string;
+    href: string;
+    icon: string;
+    isVisible: boolean;
+  }[];
 }[] = [
   {
     label: "OVERVIEW",
     slug: "overview",
+    icon: "home",
+    isVisible: true,
     children: [
       {
         label: "Dashboard",
         slug: "dashboard",
         href: "/admin",
         icon: "layout-dashboard",
+        isVisible: true,
       },
     ],
   },
   {
     label: "IDENTITY",
     slug: "identity",
+    icon: "id-card",
+    isVisible: true,
     children: [
-      { label: "Users", slug: "users", href: "/admin/users", icon: "users" },
+      { label: "Users", slug: "users", href: "/admin/users", icon: "users", isVisible: true },
       {
         label: "Organizations",
         slug: "organizations",
         href: "/admin/organizations",
         icon: "building-2",
+        isVisible: true,
       },
       {
         label: "User Context",
         slug: "user-context",
         href: "/admin/user-context",
         icon: "layers",
+        isVisible: true,
       },
     ],
   },
   {
     label: "AUTHORIZATION",
     slug: "authorization",
+    icon: "shield",
+    isVisible: true,
     children: [
       {
         label: "Resources",
         slug: "resources",
         href: "/admin/resources",
         icon: "database",
+        isVisible: true,
       },
       {
         label: "Actions",
         slug: "resource-actions",
         href: "/admin/resource-actions",
         icon: "zap",
+        isVisible: true,
       },
     ],
   },
   {
     label: "APPLICATION BUILDER",
     slug: "application-builder",
+    icon: "wrench",
+    isVisible: true,
     children: [
-      { label: "Apps", slug: "apps", href: "/admin/apps", icon: "grid" },
+      { label: "Apps", slug: "apps", href: "/admin/apps", icon: "grid", isVisible: true },
     ],
   },
   {
     label: "APPLICATION",
     slug: "application",
+    icon: "app-window",
+    isVisible: true,
     children: [
       {
         label: "OAuth Clients",
         slug: "oauth-clients",
         href: "/admin/oauth-clients",
         icon: "globe",
+        isVisible: true,
       },
       {
         label: "Agent Auth",
         slug: "agent-auth",
         href: "/admin/agent-auth",
         icon: "bot",
+        isVisible: true,
       },
       {
         label: "Consents",
         slug: "consents",
         href: "/admin/consents",
         icon: "file-check",
+        isVisible: true,
       },
       {
         label: "API Keys",
         slug: "api-keys",
         href: "/admin/api-keys",
         icon: "key",
+        isVisible: true,
       },
     ],
   },
   {
     label: "SECURITY",
     slug: "security",
+    icon: "shield-check",
+    isVisible: true,
     children: [
       {
         label: "Sessions",
         slug: "sessions",
         href: "/admin/sessions",
         icon: "activity",
+        isVisible: true,
       },
       {
         label: "Audit Logs",
         slug: "audit-logs",
         href: "/admin/audit-logs",
         icon: "scroll-text",
+        isVisible: true,
       },
       {
         label: "Security Policies",
         slug: "security-policies",
         href: "/admin/security-policies",
         icon: "shield-check",
+        isVisible: true,
       },
     ],
   },
@@ -196,22 +228,26 @@ async function main() {
   for (let gi = 0; gi < ADMIN_MENU.length; gi++) {
     const group = ADMIN_MENU[gi]!;
 
+    const groupVisible = group.isVisible ?? true;
     const groupNode = await prisma.appMenuNode.upsert({
       where: { appId_slug: { appId: app.id, slug: group.slug } },
       create: {
         appId: app.id,
         label: group.label,
         slug: group.slug,
+        icon: group.icon,
         type: "GROUP",
         order: gi,
+        isVisible: groupVisible,
         permissionKeys: [],
       },
-      update: { label: group.label, order: gi },
+      update: { label: group.label, icon: group.icon, order: gi, isVisible: groupVisible },
     });
     console.log(`\n  GROUP: "${group.label}"`);
 
     for (let ii = 0; ii < group.children.length; ii++) {
       const item = group.children[ii]!;
+      const itemVisible = item.isVisible ?? true;
       await prisma.appMenuNode.upsert({
         where: { appId_slug: { appId: app.id, slug: item.slug } },
         create: {
@@ -223,6 +259,7 @@ async function main() {
           icon: item.icon,
           type: "ITEM",
           order: ii,
+          isVisible: itemVisible,
           permissionKeys: [],
         },
         update: {
@@ -231,9 +268,11 @@ async function main() {
           href: item.href,
           icon: item.icon,
           order: ii,
+          isVisible: itemVisible,
         },
       });
-      console.log(`    ITEM: "${item.label}" → ${item.href}`);
+      const tag = itemVisible ? "" : " [hidden — permission only]";
+      console.log(`    ITEM: "${item.label}" → ${item.href}${tag}`);
     }
   }
 

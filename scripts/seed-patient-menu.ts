@@ -7,9 +7,21 @@
  * Idempotent — safe to re-run.
  *
  * Permission key format: <item-slug>:read
- *   e.g. dashboard:read, profile:read, book-appointment:read, appointment-intake:read
+ *   e.g. patient-dashboard:read, patient-profile:read, patient-appointments:read
  *
- * To add/remove permissions later, update PATIENT_MENU and re-run.
+ * Menu structure (mirrors patient sidebar):
+ *   PATIENT (group)
+ *     ├─ Dashboard          (item)
+ *     ├─ Profile            (item)
+ *     ├─ Appointments       (group)
+ *     │    ├─ All Appointments  (item)
+ *     │    └─ Book Appointment  (item)
+ *     ├─ Intake             (group)
+ *     │    ├─ Intake (Voice) (item)
+ *     │    └─ Intake (Chat)  (item)
+ *     └─ Consultation       (group)
+ *          ├─ Consultation (Voice) (item)
+ *          └─ Consultation (Chat)  (item)
  */
 
 import { PrismaClient } from "../prisma/generated/prisma";
@@ -26,72 +38,6 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 // ------------------------------------------------------------------ //
-// Menu definition — mirrors patient sidebar data
-// ------------------------------------------------------------------ //
-
-const PATIENT_MENU: {
-  label: string;
-  slug: string;
-  isVisible?: boolean;
-  children: {
-    label: string;
-    slug: string;
-    href: string;
-    icon: string;
-    isVisible?: boolean;
-  }[];
-}[] = [
-  {
-    label: "PATIENT",
-    slug: "patient",
-    children: [
-      {
-        label: "Dashboard",
-        slug: "dashboard",
-        href: "/bezs/telemedicine/patient",
-        icon: "layout-dashboard",
-      },
-      {
-        label: "Profile",
-        slug: "profile",
-        href: "/bezs/telemedicine/patient/profile",
-        icon: "user-cog",
-      },
-      {
-        label: "Appointments",
-        slug: "patient-appointment",
-        href: "/bezs/telemedicine/patient/appointments",
-        icon: "calendar-clock",
-      },
-      {
-        label: "Book Appointment",
-        slug: "book-appointment",
-        href: "/bezs/telemedicine/patient/appointments/book",
-        icon: "calendar-plus",
-      },
-      {
-        label: "Appointment Intake",
-        slug: "appointment-intake",
-        href: "/bezs/telemedicine/patient/appointments/intake",
-        icon: "calendar-plus",
-      },
-      {
-        label: "AI Pre-Consultation",
-        slug: "ai-pre-consultation",
-        href: "/bezs/telemedicine/patient/intake",
-        icon: "clipboard-list",
-      },
-      {
-        label: "AI Consultation",
-        slug: "ai-consultation",
-        href: "/bezs/telemedicine/patient/consultation",
-        icon: "stethoscope",
-      },
-    ],
-  },
-];
-
-// ------------------------------------------------------------------ //
 // Constants
 // ------------------------------------------------------------------ //
 
@@ -102,10 +48,124 @@ const ORG_SLUG = "drgodly";
 const PATIENT_ROLE = "patient";
 
 // ------------------------------------------------------------------ //
+// Menu definition
+// ------------------------------------------------------------------ //
+
+const TOP_GROUP = { label: "PATIENT", slug: "patient", isVisible: true };
+
+/** Items hanging directly from the top group */
+const DIRECT_ITEMS: {
+  label: string;
+  slug: string;
+  href: string;
+  icon: string;
+  isVisible: boolean;
+}[] = [
+  {
+    label: "Dashboard",
+    slug: "patient-dashboard",
+    href: "/bezs/telemedicine/patient",
+    icon: "layout-dashboard",
+    isVisible: true,
+  },
+  {
+    label: "Profile",
+    slug: "patient-profile",
+    href: "/bezs/telemedicine/patient/profile",
+    icon: "user-cog",
+    isVisible: true,
+  },
+];
+
+/** Sub-groups and their leaf items */
+const SUB_GROUPS: {
+  label: string;
+  slug: string;
+  icon: string;
+  isVisible: boolean;
+  items: {
+    label: string;
+    slug: string;
+    href: string;
+    icon: string;
+    isVisible: boolean;
+  }[];
+}[] = [
+  {
+    label: "Appointments",
+    slug: "patient-appointments-group",
+    icon: "calendar",
+    isVisible: true,
+    items: [
+      {
+        label: "All Appointments",
+        slug: "patient-appointments",
+        href: "/bezs/telemedicine/patient/appointments",
+        icon: "calendar-clock",
+        isVisible: true,
+      },
+      {
+        label: "Book Appointment",
+        slug: "patient-book-appointment",
+        href: "/bezs/telemedicine/patient/appointments/book",
+        icon: "calendar-plus",
+        isVisible: true,
+      },
+    ],
+  },
+  {
+    label: "AI Intake",
+    slug: "patient-ai-intake-group",
+    icon: "clipboard-list",
+    isVisible: true,
+    items: [
+      {
+        label: "Voice Intake",
+        slug: "patient-intake-voice",
+        href: "/bezs/telemedicine/patient/appointments/intake",
+        icon: "mic",
+        isVisible: true,
+      },
+      {
+        label: "Chat Intake",
+        slug: "patient-intake-chat",
+        href: "/bezs/telemedicine/patient/intake",
+        icon: "message-square",
+        isVisible: true,
+      },
+    ],
+  },
+  {
+    label: "AI Consultation",
+    slug: "patient-ai-consultation-group",
+    icon: "stethoscope",
+    isVisible: true,
+    items: [
+      {
+        label: "Voice Consultation",
+        slug: "patient-ai-consultation-voice",
+        href: "/bezs/telemedicine/patient/consultation/voice",
+        icon: "phone",
+        isVisible: true,
+      },
+      {
+        label: "Chat Consultation",
+        slug: "patient-ai-consultation-chat",
+        href: "/bezs/telemedicine/patient/consultation/chat",
+        icon: "message-circle",
+        isVisible: true,
+      },
+    ],
+  },
+];
+
+// All leaf items (the ones that get permission keys)
+const ALL_LEAF_ITEMS = [...DIRECT_ITEMS, ...SUB_GROUPS.flatMap((g) => g.items)];
+
+// ------------------------------------------------------------------ //
 // Helpers
 // ------------------------------------------------------------------ //
 
-/** Derives the permission key for a menu item: <slug>:read */
 function permKey(itemSlug: string): string {
   return `${itemSlug}:read`;
 }
@@ -115,10 +175,8 @@ function permKey(itemSlug: string): string {
 // ------------------------------------------------------------------ //
 
 async function main() {
-  // ── Phase 1: App + Menu nodes ─────────────────────────────────────
-  console.log(
-    "\n━━━ Phase 1: Telemedicine App & Patient Menu ━━━━━━━━━━━━━━━━━",
-  );
+  // ── Phase 1: App ──────────────────────────────────────────────────
+  console.log("\n━━━ Phase 1: Telemedicine App ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
   const app = await prisma.app.upsert({
     where: { slug: APP_SLUG },
@@ -136,33 +194,92 @@ async function main() {
   });
   console.log(`\n  App: "${app.name}" (${app.id})`);
 
-  for (let gi = 0; gi < PATIENT_MENU.length; gi++) {
-    const group = PATIENT_MENU[gi]!;
+  // ── Phase 2: Menu nodes ───────────────────────────────────────────
+  console.log("\n━━━ Phase 2: Patient Menu Nodes ━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-    const groupVisible = group.isVisible ?? true;
-    const groupNode = await prisma.appMenuNode.upsert({
-      where: { appId_slug: { appId: app.id, slug: group.slug } },
+  // Top-level group: PATIENT
+  const topGroup = await prisma.appMenuNode.upsert({
+    where: { appId_slug: { appId: app.id, slug: TOP_GROUP.slug } },
+    create: {
+      appId: app.id,
+      label: TOP_GROUP.label,
+      slug: TOP_GROUP.slug,
+      type: "GROUP",
+      order: 0,
+      isVisible: true,
+      permissionKeys: [],
+    },
+    update: { label: TOP_GROUP.label, isVisible: true },
+  });
+  console.log(`\n  GROUP: "${TOP_GROUP.label}" (${topGroup.id})`);
+
+  // Direct items under top group
+  for (let i = 0; i < DIRECT_ITEMS.length; i++) {
+    const item = DIRECT_ITEMS[i]!;
+    const isVisible = item.isVisible ?? true;
+    await prisma.appMenuNode.upsert({
+      where: { appId_slug: { appId: app.id, slug: item.slug } },
       create: {
         appId: app.id,
-        label: group.label,
-        slug: group.slug,
-        type: "GROUP",
-        order: gi,
-        isVisible: groupVisible,
+        parentId: topGroup.id,
+        label: item.label,
+        slug: item.slug,
+        href: item.href,
+        icon: item.icon,
+        type: "ITEM",
+        order: i,
+        isVisible,
         permissionKeys: [],
       },
-      update: { label: group.label, order: gi, isVisible: groupVisible },
+      update: {
+        parentId: topGroup.id,
+        label: item.label,
+        href: item.href,
+        icon: item.icon,
+        order: i,
+        isVisible,
+      },
     });
-    console.log(`\n  GROUP: "${group.label}"`);
+    const tag = isVisible ? "" : " [hidden — permission only]";
+    console.log(`    ITEM: "${item.label}" → ${item.href}${tag}`);
+  }
 
-    for (let ii = 0; ii < group.children.length; ii++) {
-      const item = group.children[ii]!;
+  // Sub-groups and their items
+  for (let gi = 0; gi < SUB_GROUPS.length; gi++) {
+    const subGroup = SUB_GROUPS[gi]!;
+
+    const subGroupVisible = subGroup.isVisible ?? true;
+    const subGroupNode = await prisma.appMenuNode.upsert({
+      where: { appId_slug: { appId: app.id, slug: subGroup.slug } },
+      create: {
+        appId: app.id,
+        parentId: topGroup.id,
+        label: subGroup.label,
+        slug: subGroup.slug,
+        icon: subGroup.icon,
+        type: "GROUP",
+        order: DIRECT_ITEMS.length + gi,
+        isVisible: subGroupVisible,
+        permissionKeys: [],
+      },
+      update: {
+        parentId: topGroup.id,
+        label: subGroup.label,
+        icon: subGroup.icon,
+        order: DIRECT_ITEMS.length + gi,
+        isVisible: subGroupVisible,
+      },
+    });
+    console.log(`\n  SUB-GROUP: "${subGroup.label}" (${subGroupNode.id})`);
+
+    for (let ii = 0; ii < subGroup.items.length; ii++) {
+      const item = subGroup.items[ii]!;
       const itemVisible = item.isVisible ?? true;
       await prisma.appMenuNode.upsert({
         where: { appId_slug: { appId: app.id, slug: item.slug } },
         create: {
           appId: app.id,
-          parentId: groupNode.id,
+          parentId: subGroupNode.id,
           label: item.label,
           slug: item.slug,
           href: item.href,
@@ -173,7 +290,7 @@ async function main() {
           permissionKeys: [],
         },
         update: {
-          parentId: groupNode.id,
+          parentId: subGroupNode.id,
           label: item.label,
           href: item.href,
           icon: item.icon,
@@ -186,10 +303,8 @@ async function main() {
     }
   }
 
-  // ── Phase 2: drgodly org + patient role ───────────────────────────
-  console.log(
-    "\n━━━ Phase 2: drgodly Org & Patient Role ━━━━━━━━━━━━━━━━━━━━━━",
-  );
+  // ── Phase 3: drgodly org ──────────────────────────────────────────
+  console.log("\n━━━ Phase 3: drgodly Org ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
   const org = await prisma.organization.findUnique({
     where: { slug: ORG_SLUG },
@@ -202,9 +317,9 @@ async function main() {
   }
   console.log(`\n  Found org: "${org.name}" (${org.id})`);
 
-  // ── Phase 3: Resource + ResourceActions ───────────────────────────
+  // ── Phase 4: Resource + ResourceActions ───────────────────────────
   console.log(
-    "\n━━━ Phase 3: Resource & Actions ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    "\n━━━ Phase 4: Resource & Actions ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
   );
 
   const resource = await prisma.resource.upsert({
@@ -217,9 +332,7 @@ async function main() {
   });
   console.log(`\n  Resource: "${resource.name}" (${resource.id})`);
 
-  const allItems = PATIENT_MENU.flatMap((g) => g.children);
-
-  for (const item of allItems) {
+  for (const item of ALL_LEAF_ITEMS) {
     const key = permKey(item.slug);
     const ra = await prisma.resourceAction.upsert({
       where: { key },
@@ -237,9 +350,9 @@ async function main() {
     console.log(`  Action: ${ra.key}`);
   }
 
-  // ── Phase 4: AppResource link ─────────────────────────────────────
+  // ── Phase 5: AppResource link ─────────────────────────────────────
   console.log(
-    "\n━━━ Phase 4: AppResource Link ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    "\n━━━ Phase 5: AppResource Link ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
   );
 
   await prisma.appResource.upsert({
@@ -249,18 +362,21 @@ async function main() {
   });
   console.log(`\n  "${resource.name}" linked to app "${app.name}"`);
 
-  // ── Phase 4b: API Resources & Actions ────────────────────────────
+  // ── Phase 5b: API Resources & Actions ────────────────────────────
   console.log(
-    "\n━━━ Phase 4b: API Resources & Actions ━━━━━━━━━━━━━━━━━━━━━━━",
+    "\n━━━ Phase 5b: API Resources & Actions ━━━━━━━━━━━━━━━━━━━━━━━",
   );
 
   const API_RESOURCES: { name: string; actions: string[] }[] = [
-    { name: "patient",                actions: ["create", "read", "update", "delete"] },
-    { name: "appointment",            actions: ["create", "read", "update", "delete"] },
-    { name: "encounter",              actions: ["create", "read", "update", "delete"] },
-    { name: "questionnaire_response", actions: ["create", "read", "update", "delete"] },
-    { name: "consultagent",           actions: ["chat"] },
-    { name: "agent",                  actions: ["chat"] },
+    { name: "patient", actions: ["create", "read", "update", "delete"] },
+    { name: "appointment", actions: ["create", "read", "update", "delete"] },
+    { name: "encounter", actions: ["create", "read", "update", "delete"] },
+    {
+      name: "questionnaire_response",
+      actions: ["create", "read", "update", "delete"],
+    },
+    { name: "consultagent", actions: ["chat"] },
+    { name: "agent", actions: ["chat"] },
   ];
 
   for (const apiRes of API_RESOURCES) {
@@ -275,8 +391,16 @@ async function main() {
       const key = `${apiRes.name}:${action}`;
       const ra = await prisma.resourceAction.upsert({
         where: { key },
-        create: { resourceId: res.id, name: `${apiRes.name} ${action}`, key, description: `${action} on ${apiRes.name}` },
-        update: { name: `${apiRes.name} ${action}`, description: `${action} on ${apiRes.name}` },
+        create: {
+          resourceId: res.id,
+          name: `${apiRes.name} ${action}`,
+          key,
+          description: `${action} on ${apiRes.name}`,
+        },
+        update: {
+          name: `${apiRes.name} ${action}`,
+          description: `${action} on ${apiRes.name}`,
+        },
       });
       console.log(`    Action: ${ra.key}`);
     }
@@ -288,12 +412,12 @@ async function main() {
     });
   }
 
-  // ── Phase 5: Set permissionKeys on each ITEM menu node ────────────
+  // ── Phase 6: Set permissionKeys on each ITEM menu node ────────────
   console.log(
-    "\n━━━ Phase 5: Menu Node permissionKeys ━━━━━━━━━━━━━━━━━━━━━━━",
+    "\n━━━ Phase 6: Menu Node permissionKeys ━━━━━━━━━━━━━━━━━━━━━━━",
   );
 
-  for (const item of allItems) {
+  for (const item of ALL_LEAF_ITEMS) {
     const key = permKey(item.slug);
     const { count } = await prisma.appMenuNode.updateMany({
       where: { appId: app.id, slug: item.slug },
@@ -306,22 +430,18 @@ async function main() {
     }
   }
 
-  // ── Phase 6: OrganizationRole — patient ───────────────────────────
+  // ── Phase 7: OrganizationRole — patient ───────────────────────────
   //
-  // getUserPermissions() parses `permission` as JSON:
-  //   { "dashboard": ["read"], "profile": ["read"], ... }
-  // → produces keys like "dashboard:read", "profile:read", ...
-  //
-  // To add an action later: push the new action string into the item's array.
-  // To remove an item:      delete its key from the object.
+  // Permission map: { [itemSlug]: ["read"] }
+  // getUserPermissions() parses this as "itemSlug:read" keys.
   //
   console.log(
-    "\n━━━ Phase 6: Org Role Permissions ━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+    "\n━━━ Phase 7: Org Role Permissions ━━━━━━━━━━━━━━━━━━━━━━━━━━━",
   );
 
   // Build permission map: menu-based slugs + API-level resource permissions
   const permissionMap: Record<string, string[]> = {};
-  for (const item of allItems) {
+  for (const item of ALL_LEAF_ITEMS) {
     permissionMap[item.slug] = ["read"];
   }
   // API permissions — patient has all except practitioner:*
@@ -369,9 +489,9 @@ async function main() {
   // ── Summary ───────────────────────────────────────────────────────
   console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
   console.log("✓ Seed complete.\n");
-  console.log("  App:      ", APP_NAME, `(slug: ${APP_SLUG})`);
-  console.log("  Org:      ", org.name, `(slug: ${ORG_SLUG})`);
-  console.log("  Role:     ", PATIENT_ROLE);
+  console.log("  App:        ", APP_NAME, `(slug: ${APP_SLUG})`);
+  console.log("  Org:        ", org.name, `(slug: ${ORG_SLUG})`);
+  console.log("  Role:       ", PATIENT_ROLE);
   console.log("  Permissions:", grantedKeys.join(", "));
   console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 }

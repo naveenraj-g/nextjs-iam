@@ -246,8 +246,6 @@ export const authConfig = {
     user: {
       create: {
         after: async (user) => {
-          console.log(user);
-
           try {
             // 1. Fetch org first — its id is needed for all subsequent queries
             const org = await prisma.organization.findUnique({
@@ -390,12 +388,12 @@ export const authConfig = {
     },
   },
 
-  advanced: {
-    crossSubDomainCookies: {
-      enabled: true,
-      domain: "drgodly.com",
-    },
-  },
+  // advanced: {
+  //   crossSubDomainCookies: {
+  //     enabled: true,
+  //     domain: "drgodly.com",
+  //   },
+  // },
 
   // Dynamically load redirect URI origins from registered OAuth clients.
   // Better Auth calls this async function per-request (with TTL cache).
