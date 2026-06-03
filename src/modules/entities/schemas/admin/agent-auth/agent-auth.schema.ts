@@ -181,6 +181,8 @@ export const CreateHostResponseDtoSchema = z.object({
   hostId: z.string(),
   default_capabilities: z.array(z.string()),
   status: z.string(),
+  enrollmentToken: z.string().optional(),
+  enrollmentTokenExpiresAt: z.coerce.date().optional(),
 });
 export type TCreateHostResponseDtoSchema = z.infer<
   typeof CreateHostResponseDtoSchema
@@ -332,6 +334,7 @@ export type TListPendingApprovalsResponseDtoSchema = z.infer<
 export const ApproveCapabilityValidationSchema = z.object({
   agent_id: z.string().optional(),
   approval_id: z.string().optional(),
+  user_code: z.string().optional(),
   action: z.enum(["approve", "deny"]),
   capabilities: z.array(z.string()).optional(),
   ttl: z.number().optional(),

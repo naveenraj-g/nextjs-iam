@@ -24,6 +24,50 @@ import { CreateHostForm } from "../../forms/agent-auth/CreateHostForm";
 import { createHostAction } from "@/modules/server/presentation/actions/admin";
 import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import { Copy, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+function CredentialRow({
+  label,
+  value,
+  fieldKey,
+  copied,
+  onCopy,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  fieldKey: string;
+  copied: string | null;
+  onCopy: (key: string, text: string) => void;
+  highlight?: boolean;
+}) {
+  const isCopied = copied === fieldKey;
+  return (
+    <div
+      className={cn(
+        "rounded-md border p-3",
+        highlight ? "bg-amber-500/5 border-amber-500/30" : "bg-muted/40",
+      )}
+    >
+      <p className="text-xs text-muted-foreground mb-1">{label}</p>
+      <div className="flex items-center justify-between gap-2">
+        <code className="text-sm font-mono break-all">{value}</code>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="shrink-0 h-7 w-7"
+          onClick={() => onCopy(fieldKey, value)}
+        >
+          {isCopied ? (
+            <Check className="h-3.5 w-3.5 text-emerald-500" />
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export const CreateHostModal = () => {
   const closeModal = useAdminStore((state) => state.onClose);
@@ -34,7 +78,7 @@ export const CreateHostModal = () => {
 
   const [createdHost, setCreatedHost] =
     useState<TCreateHostResponseDtoSchema | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
 
   const form = useForm<TCreateHostFormSchema>({
     resolver: zodResolver(CreateHostFormSchema),
@@ -76,16 +120,16 @@ export const CreateHostModal = () => {
     });
   }
 
-  function handleCopy(text: string) {
+  function handleCopy(key: string, text: string) {
     navigator.clipboard.writeText(text);
-    setCopied(true);
+    setCopied(key);
     toast.success("Copied to clipboard");
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(null), 2000);
   }
 
   function handleClose() {
     setCreatedHost(null);
-    setCopied(false);
+    setCopied(null);
     form.reset();
     closeModal();
   }
@@ -98,31 +142,30 @@ export const CreateHostModal = () => {
             <DialogHeader>
               <DialogTitle>Host Created</DialogTitle>
               <DialogDescription>
-                Save the Host ID below. Use it to generate enrollment tokens for
-                agents.
+                Copy the Host ID and Enrollment Token now.{" "}
+                <span className="text-destructive font-medium">
+                  The enrollment token is shown only once.
+                </span>
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
-              <div className="rounded-md border bg-muted/40 p-3">
-                <p className="text-xs text-muted-foreground mb-1">Host ID</p>
-                <div className="flex items-center justify-between gap-2">
-                  <code className="text-sm font-mono break-all">
-                    {createdHost.hostId}
-                  </code>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="shrink-0 h-7 w-7"
-                    onClick={() => handleCopy(createdHost.hostId)}
-                  >
-                    {copied ? (
-                      <Check className="h-3.5 w-3.5 text-emerald-500" />
-                    ) : (
-                      <Copy className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </div>
-              </div>
+              <CredentialRow
+                label="Host ID"
+                value={createdHost.hostId}
+                fieldKey="hostId"
+                copied={copied}
+                onCopy={handleCopy}
+              />
+              {createdHost.enrollmentToken && (
+                <CredentialRow
+                  label="Enrollment Token (one-time)"
+                  value={createdHost.enrollmentToken}
+                  fieldKey="enrollmentToken"
+                  copied={copied}
+                  onCopy={handleCopy}
+                  highlight
+                />
+              )}
               <div className="rounded-md border bg-muted/40 p-3">
                 <p className="text-xs text-muted-foreground mb-1">Status</p>
                 <p className="text-sm">{createdHost.status}</p>

@@ -69,12 +69,14 @@ export type TSendVerificationEmailValidationSchema = z.infer<
 // Server Action Schema
 export const SignupActionSchema = z.object({
   payload: SignupValidationSchema,
+  captchaToken: z.string().optional(),
   transportOptions: TransportOptionsSchema.optional()
 })
 export type TSignupActionSchema = z.infer<typeof SignupActionSchema>
 
 export const SigninActionSchema = z.object({
   payload: SigninValidationSchema,
+  captchaToken: z.string().optional(),
   transportOptions: TransportOptionsSchema.optional()
 })
 export type TSigninActionSchema = z.infer<typeof SigninActionSchema>
@@ -190,6 +192,25 @@ export const SendTwoFactorOTPDtoSchema = z.object({
 export type TSendTwoFactorOTPDtoSchema = z.infer<
   typeof SendTwoFactorOTPDtoSchema
 >
+
+// TOTP verification schemas (authenticator app)
+
+export const VerifyTOTPValidationSchema = z.object({
+  code: z.string().min(6).max(6),
+  trustDevice: z.boolean().optional(),
+})
+export type TVerifyTOTPValidationSchema = z.infer<typeof VerifyTOTPValidationSchema>
+
+export const VerifyTOTPActionSchema = z.object({
+  payload: VerifyTOTPValidationSchema,
+  transportOptions: TransportOptionsSchema.optional(),
+})
+export type TVerifyTOTPActionSchema = z.infer<typeof VerifyTOTPActionSchema>
+
+export const VerifyTOTPDtoSchema = z.object({
+  token: z.string(),
+})
+export type TVerifyTOTPDtoSchema = z.infer<typeof VerifyTOTPDtoSchema>
 
 // ------------------------------------------------------- //
 

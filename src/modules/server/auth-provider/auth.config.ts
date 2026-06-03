@@ -20,15 +20,27 @@ import {
   createAccessControl,
   magicLink,
   customSession,
+  multiSession,
+  bearer,
+  haveIBeenPwned,
 } from "better-auth/plugins";
 import { apiKey } from "@better-auth/api-key";
-// import { agentAuth } from "@better-auth/agent-auth";
+import { agentAuth } from "@better-auth/agent-auth";
 import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
 // import { createFromOpenAPI } from "@better-auth/agent-auth/openapi";
 
 // local import
 import { prisma } from "../../../../prisma/db";
-import { getEmailVerificationTemplate } from "@/modules/shared/email-templates/auth-email.templates";
+import { executeCapability } from "../agent-auth/capability-executor";
+import {
+  getEmailVerificationTemplate,
+  getPasswordResetTemplate,
+  getChangeEmailTemplate,
+  getDeleteAccountTemplate,
+  getMagicLinkTemplate,
+  getOtpTemplate,
+  getExistingEmailSignupTemplate,
+} from "@/modules/shared/email-templates/auth-email.templates";
 import { sendAuthEmail } from "@/modules/server/utils/sendAuthEmail";
 import {
   getOAuthClientOrigins,
@@ -223,15 +235,29 @@ export const authConfig = {
   }),
 
   rateLimit: {
-    window: 60, // time window in seconds
-    max: 100, // max requests in the window
+    window: 60,
+    max: 50,
+    customRules: {
+      "/sign-in/email": { window: 60, max: 5 },
+      "/sign-up/email": { window: 60, max: 3 },
+      "/forget-password": { window: 300, max: 3 },
+      "/reset-password": { window: 300, max: 5 },
+      "/two-factor/verify-otp": { window: 60, max: 5 },
+      "/magic-link/send-magic-link": { window: 60, max: 3 },
+      "/oauth2/authorize": { window: 60, max: 20 },
+      "/oauth2/token": { window: 60, max: 30 },
+      "/agent/register": { window: 300, max: 10 },
+      "/host/enroll": { window: 300, max: 10 },
+      "/capability/execute": { window: 60, max: 60 },
+      "/admin/list-users": { window: 60, max: 30 },
+      "/admin/create-user": { window: 60, max: 10 },
+    },
   },
 
   session: {
     storeSessionInDatabase: true,
-
-    // NOTE: Caching the session for 1 min
-    // IMPORTANT: Don't cache session for long time
+    expiresIn: 60 * 60 * 24 * 7, // 7-day absolute expiry
+    updateAge: 60 * 60 * 24, // refresh if session is older than 1 day
     cookieCache: {
       enabled: true,
       maxAge: 60, // 1 min
@@ -245,67 +271,6 @@ export const authConfig = {
   databaseHooks: {
     user: {
       create: {
-        after: async (user) => {
-          try {
-            // 1. Fetch org first — its id is needed for all subsequent queries
-            const org = await prisma.organization.findUnique({
-              where: { slug: "drgodly" },
-              select: { id: true },
-            });
-            if (!org) return;
-
-            // 2. Fetch patient role + membership check in parallel using org.id
-            const [patientOrgRole, alreadyMember] = await Promise.all([
-              prisma.organizationRole.findFirst({
-                where: { organizationId: org.id, role: "patient" },
-                select: { id: true, role: true },
-              }),
-              prisma.member.findFirst({
-                where: { organizationId: org.id, userId: user.id },
-                select: { id: true },
-              }),
-            ]);
-
-            // Skip if already a member
-            if (alreadyMember) return;
-
-            const memberRole = patientOrgRole ? "patient" : "member";
-
-            // 3. Create member + redirect + context atomically
-            await prisma.$transaction(async (tx) => {
-              await tx.member.create({
-                data: {
-                  id: randomUUID(),
-                  organizationId: org.id,
-                  userId: user.id,
-                  role: memberRole,
-                  createdAt: new Date(),
-                },
-              });
-
-              if (patientOrgRole) {
-                await tx.userOrgRoleRedirect.create({
-                  data: {
-                    userId: user.id,
-                    organizationId: org.id,
-                    role: patientOrgRole.role,
-                    redirectUrl: "/bezs/telemedicine/patient",
-                  },
-                });
-              }
-
-              await tx.userContext.create({
-                data: {
-                  userId: user.id,
-                  activeOrganizationId: org.id,
-                  activeRoleId: patientOrgRole?.id ?? null,
-                },
-              });
-            });
-          } catch {
-            // Do not block signup if the org or roles are not set up yet
-          }
-        },
         before: async (user) => {
           // Generate username for OAuth users who don't have one
           if (!user.username) {
@@ -358,30 +323,97 @@ export const authConfig = {
     session: {
       create: {
         before: async (session) => {
-          // Prefer the activeOrganizationId stored in UserContext (set by admin).
-          // Fall back to the user's earliest membership if no context exists yet.
-          const [userCtx, firstMembership] = await Promise.all([
-            prisma.userContext.findUnique({
-              where: { userId: session.userId },
-              select: { activeOrganizationId: true },
-            }),
-            prisma.member.findFirst({
-              where: { userId: session.userId },
-              orderBy: { createdAt: "asc" },
-              select: { organizationId: true },
-            }),
-          ]);
+          const userCtx = await prisma.userContext.findUnique({
+            where: { userId: session.userId },
+            select: { activeOrganizationId: true },
+          });
 
+          // No UserContext means this is the first session after signup.
+          // Run org membership setup here so the session gets a valid
+          // activeOrganizationId immediately — avoids the race between
+          // user.create.after and session creation.
+          if (!userCtx) {
+            try {
+              const org = await prisma.organization.findUnique({
+                where: { slug: "drgodly" },
+                select: { id: true },
+              });
+
+              if (org) {
+                const [patientOrgRole, alreadyMember] = await Promise.all([
+                  prisma.organizationRole.findFirst({
+                    where: { organizationId: org.id, role: "patient" },
+                    select: { id: true, role: true },
+                  }),
+                  prisma.member.findFirst({
+                    where: { organizationId: org.id, userId: session.userId },
+                    select: { id: true },
+                  }),
+                ]);
+
+                if (!alreadyMember) {
+                  const memberRole = patientOrgRole ? "patient" : "member";
+
+                  await prisma.$transaction(async (tx) => {
+                    await tx.member.create({
+                      data: {
+                        id: randomUUID(),
+                        organizationId: org.id,
+                        userId: session.userId,
+                        role: memberRole,
+                        createdAt: new Date(),
+                      },
+                    });
+
+                    if (patientOrgRole) {
+                      await tx.userOrgRoleRedirect.create({
+                        data: {
+                          userId: session.userId,
+                          organizationId: org.id,
+                          role: patientOrgRole.role,
+                          redirectUrl: "/bezs/telemedicine/patient",
+                        },
+                      });
+                    }
+
+                    await tx.userContext.create({
+                      data: {
+                        userId: session.userId,
+                        activeOrganizationId: org.id,
+                        activeRoleId: patientOrgRole?.id ?? null,
+                      },
+                    });
+                  });
+
+                  return {
+                    data: { ...session, activeOrganizationId: org.id },
+                  };
+                }
+              }
+            } catch {
+              // Don't block session creation if org setup fails
+            }
+
+            return {
+              data: { ...session, activeOrganizationId: null },
+            };
+          }
+
+          // Existing user — prefer stored activeOrganizationId, fall back to
+          // earliest membership if the context row has no org set yet.
           const activeOrganizationId =
-            userCtx?.activeOrganizationId ??
-            firstMembership?.organizationId ??
+            userCtx.activeOrganizationId ??
+            (
+              await prisma.member.findFirst({
+                where: { userId: session.userId },
+                orderBy: { createdAt: "asc" },
+                select: { organizationId: true },
+              })
+            )?.organizationId ??
             null;
 
           return {
-            data: {
-              ...session,
-              activeOrganizationId,
-            },
+            data: { ...session, activeOrganizationId },
           };
         },
       },
@@ -405,18 +437,16 @@ export const authConfig = {
     sendResetPassword: async ({ user, url }) => {
       void sendAuthEmail({
         to: user.email,
-        subject: "Reset password",
-        html: `<a href="${url}">Reset password</a>`,
+        subject: "Reset your password",
+        html: getPasswordResetTemplate(url, user.name),
       });
     },
-    onPasswordReset: async ({ user }) => {
-      console.log(`Password for user ${user.email} has been reset.`);
-    },
+    onPasswordReset: async ({ user: _user }) => {},
     onExistingUserSignUp: async ({ user }) => {
       void sendAuthEmail({
         to: user.email,
-        subject: "Sign-up attempt with your email",
-        html: "<p>Someone tried to create an account using your email address. If this was you, try signing in instead. If not, you can safely ignore this email.</p>",
+        subject: "Sign-in attempt on your account",
+        html: getExistingEmailSignupTemplate(),
       });
     },
   },
@@ -454,8 +484,8 @@ export const authConfig = {
       sendChangeEmailConfirmation: async ({ user, url }) => {
         void sendAuthEmail({
           to: user.email,
-          subject: "Change your email",
-          html: `Click the link below to change your email: <a href="${url}">Change Email</a>`,
+          subject: "Confirm your new email address",
+          html: getChangeEmailTemplate(url, user.name),
         });
       },
     },
@@ -464,8 +494,8 @@ export const authConfig = {
       sendDeleteAccountVerification: async ({ user, url }) => {
         void sendAuthEmail({
           to: user.email,
-          subject: "Delete your account",
-          html: `Click the link below to delete your account: <a href="${url}">Delete Account</a>`,
+          subject: "Confirm account deletion",
+          html: getDeleteAccountTemplate(url, user.name),
         });
       },
     },
@@ -559,8 +589,8 @@ export const authConfig = {
         sendOTP: async ({ user, otp }) => {
           void sendAuthEmail({
             to: user.email,
-            subject: "2 FA OTP",
-            html: `Your 2 FA OTP: ${otp}`,
+            subject: "Your 2FA verification code",
+            html: getOtpTemplate(otp, "Your 2FA verification code"),
           });
         },
       },
@@ -668,26 +698,50 @@ export const authConfig = {
       sendMagicLink: async ({ email, url }) => {
         void sendAuthEmail({
           to: email,
-          subject: "Your magic link",
-          html: `<a href="${url}">Sign in with magic link</a>`,
+          subject: "Your sign-in link",
+          html: getMagicLinkTemplate(url),
         });
       },
     }),
 
     apiKey({ defaultPrefix: "drgodly_" }),
 
-    // agentAuth({
-    //   ...createFromOpenAPI(spec, {
-    //     baseUrl: process.env.FHIR_SERVER_URL!,
-    //     async resolveHeaders({ ctx }) {
-    //       const token = await getJwtToken(ctx);
-
-    //       return {
-    //         Authorization: `Bearer ${token}`,
-    //       };
-    //     },
-    //   }),
-    // }),
+    agentAuth({
+      providerName: "DrGodly IAM",
+      providerDescription:
+        "Central authentication authority for the DrGodly healthcare platform",
+      modes: ["delegated", "autonomous"],
+      capabilities: [
+        {
+          name: "profile:read",
+          description: "Read the authenticated user's profile",
+        },
+        {
+          name: "profile:write",
+          description: "Update the authenticated user's profile",
+        },
+        {
+          name: "organizations:read",
+          description: "List organizations the user belongs to",
+        },
+        {
+          name: "api_keys:read",
+          description: "List API keys for the authenticated user",
+        },
+        {
+          name: "api_keys:create",
+          description: "Create API keys on behalf of the user",
+        },
+        { name: "api_keys:revoke", description: "Revoke API keys" },
+      ],
+      async onExecute({ capability, arguments: args, agentSession }) {
+        return executeCapability(
+          capability,
+          (args ?? {}) as Record<string, unknown>,
+          agentSession,
+        );
+      },
+    }),
 
     // ── Context: attach nav apps, permissions, and org list to every session ──
     // Runs at most once per cookie-cache TTL (60 s).
@@ -704,50 +758,13 @@ export const authConfig = {
       };
     }),
 
+    multiSession(),
+
+    bearer(),
+
+    haveIBeenPwned(),
+
     // NOTE: This plugin make sure the application knows how to set cookies in next.js, it is required for server side operations with better-auth
     nextCookies(),
   ],
 } satisfies BetterAuthOptions;
-
-/* 
-{
-      providerName: "My API",
-      providerDescription: "My MCP-enabled API",
-
-      modes: ["delegated", "autonomous"],
-
-      capabilities: [
-        {
-          name: "hello_world",
-          description: "Test capability",
-        },
-        {
-          name: "create_user",
-          description: "Create a new user",
-          input: {
-            type: "object",
-            properties: {
-              name: { type: "string" },
-            },
-            required: ["name"],
-          },
-        },
-      ],
-
-      async onExecute({ capability, arguments: args, agentSession }) {
-        if (capability === "hello_world") {
-          return { message: "Hello from BetterAuth 🚀" };
-        }
-
-        if (capability === "create_user") {
-          return {
-            ok: true,
-            name: args?.name,
-            createdBy: agentSession.user?.id,
-          };
-        }
-
-        throw new Error("Unknown capability");
-      },
-    }
-*/

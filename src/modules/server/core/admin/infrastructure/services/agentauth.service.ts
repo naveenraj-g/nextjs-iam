@@ -260,6 +260,7 @@ export class AgentAuthService implements IAgentAuthService {
         body: {
           agent_id: payload.agent_id,
           approval_id: payload.approval_id,
+          user_code: payload.user_code,
           action: payload.action,
           capabilities: payload.capabilities,
           ttl: payload.ttl,

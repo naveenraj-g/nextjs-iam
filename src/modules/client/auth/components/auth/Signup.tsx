@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   InputGroup,
   InputGroupAddon,
@@ -38,11 +38,15 @@ import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import OauthButton from "./OauthButton";
 import { Link } from "@/i18n/navigation";
 import AuthSeparator from "./AuthSeparator";
+import { Turnstile } from "../shared/Turnstile";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 function Signup() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
+  const handleCaptchaToken = useCallback((token: string) => setCaptchaToken(token), []);
+  const handleCaptchaExpire = useCallback(() => setCaptchaToken(undefined), []);
 
   const form = useForm<TSignupFormSchema>({
     resolver: zodResolver(SignupFormSchema),
@@ -80,6 +84,7 @@ function Signup() {
 
     await execute({
       payload: values,
+      captchaToken,
       transportOptions: {
         shouldRedirect: isOAuthFlow ? true : undefined,
         url: isOAuthFlow
@@ -210,6 +215,8 @@ function Signup() {
                   </Field>
                 )}
               />
+
+              <Turnstile onToken={handleCaptchaToken} onExpire={handleCaptchaExpire} />
 
               <div className="space-y-2.5">
                 <Controller

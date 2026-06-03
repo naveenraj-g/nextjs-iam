@@ -39,6 +39,11 @@ export type TSendTwoFactorOTPPayload = {
   trustDevice?: boolean
 }
 
+export type TVerifyTOTPPayload = {
+  code: string
+  trustDevice?: boolean
+}
+
 export type TSendMagicLinkPayload = {
   email: string
   callbackURL?: string

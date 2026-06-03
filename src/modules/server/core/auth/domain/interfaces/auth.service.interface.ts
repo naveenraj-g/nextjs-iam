@@ -6,6 +6,7 @@ import {
   TSendEmailVerificationDtoSchema,
   TVerifyTwoFactorOTPDtoSchema,
   TSendTwoFactorOTPDtoSchema,
+  TVerifyTOTPDtoSchema,
   TSendMagicLinkDtoSchema,
   TSendResetPasswordDtoSchema,
   TResetPasswordDtoSchema,
@@ -17,6 +18,7 @@ import {
   TSignupEmailPayload,
   TVerifyTwoFactorOTPPayload,
   TSendTwoFactorOTPPayload,
+  TVerifyTOTPPayload,
   TSendMagicLinkPayload,
   TSendResetPasswordPayload,
   TResetPasswordPayload,
@@ -42,6 +44,9 @@ export interface IAuthService {
   verifyTwoFactorOTP(
     payload: TVerifyTwoFactorOTPPayload
   ): Promise<TVerifyTwoFactorOTPDtoSchema>
+  verifyTwoFactorTOTP(
+    payload: TVerifyTOTPPayload
+  ): Promise<TVerifyTOTPDtoSchema>
   sendMagicLink(
     payload: TSendMagicLinkPayload
   ): Promise<TSendMagicLinkDtoSchema>

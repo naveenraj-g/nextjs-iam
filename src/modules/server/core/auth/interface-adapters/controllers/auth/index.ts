@@ -4,6 +4,7 @@ export * from "./signinWithSocial.controller";
 export * from "./signout.controller";
 export * from "./sendTwoFactorOTP.controller";
 export * from "./verifyTwoFactorOTP.controller";
+export * from "./verifyTOTP.controller";
 export * from "./sendMagicLink.controller";
 export * from "./sendResetPassword.controller";
 export * from "./resetPassword.controller";

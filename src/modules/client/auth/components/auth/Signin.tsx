@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/field";
 import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { authClient } from "@/modules/client/auth/auth-client";
 import {
   InputGroup,
@@ -38,6 +38,7 @@ import { handleZSAError } from "@/modules/client/shared/error/handleZSAError";
 import { Link } from "@/i18n/navigation";
 import OauthButton from "./OauthButton";
 import AuthSeparator from "./AuthSeparator";
+import { Turnstile } from "../shared/Turnstile";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { LastUsedBadge } from "@/components/LastedUsedBadge";
@@ -45,6 +46,9 @@ import { LastUsedBadge } from "@/components/LastedUsedBadge";
 function Signin() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [lastMethod, setLastMethod] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
+  const handleCaptchaToken = useCallback((token: string) => setCaptchaToken(token), []);
+  const handleCaptchaExpire = useCallback(() => setCaptchaToken(undefined), []);
 
   useEffect(() => {
     (async () => {
@@ -91,6 +95,7 @@ function Signin() {
 
     await execute({
       payload: values,
+      captchaToken,
       transportOptions: {
         shouldRedirect: shouldRedirect ? true : undefined,
         url: shouldRedirect
@@ -195,6 +200,8 @@ function Signin() {
                   </Field>
                 )}
               />
+
+              <Turnstile onToken={handleCaptchaToken} onExpire={handleCaptchaExpire} />
 
               <div className="grid gap-4">
                 <div className="space-y-2.5">

@@ -20,6 +20,8 @@ import {
   TSendResetPasswordDtoSchema,
   ResetPasswordDtoSchema,
   TResetPasswordDtoSchema,
+  VerifyTOTPDtoSchema,
+  TVerifyTOTPDtoSchema,
 } from "@/modules/entities/schemas/auth";
 import { auth } from "@/modules/server/auth-provider/auth";
 import { IAuthService } from "../../domain/interfaces/auth.service.interface";
@@ -32,6 +34,7 @@ import {
   TSignupEmailPayload,
   TVerifyTwoFactorOTPPayload,
   TSendTwoFactorOTPPayload,
+  TVerifyTOTPPayload,
   TSendMagicLinkPayload,
   TSendResetPasswordPayload,
   TResetPasswordPayload,
@@ -342,6 +345,46 @@ export class AuthService implements IAuthService {
       });
 
       mapBetterAuthError(error, "Failed to verify two-factor OTP");
+    }
+  }
+
+  async verifyTwoFactorTOTP(
+    payload: TVerifyTOTPPayload,
+  ): Promise<TVerifyTOTPDtoSchema> {
+    const startTimeMs = Date.now();
+    const operationId = randomUUID();
+
+    logOperation("start", {
+      name: "AuthService.verifyTwoFactorTOTP",
+      startTimeMs,
+      context: { operationId },
+    });
+
+    try {
+      const res = await auth.api.verifyTOTP({
+        body: { code: payload.code, trustDevice: payload.trustDevice },
+        headers: await headers(),
+      });
+
+      const data = await VerifyTOTPDtoSchema.parseAsync(res);
+
+      logOperation("success", {
+        name: "AuthService.verifyTwoFactorTOTP",
+        startTimeMs,
+        data,
+        context: { operationId },
+      });
+
+      return data;
+    } catch (error) {
+      logOperation("error", {
+        name: "AuthService.verifyTwoFactorTOTP",
+        startTimeMs,
+        err: error,
+        context: { operationId },
+      });
+
+      mapBetterAuthError(error, "Failed to verify TOTP code");
     }
   }
 

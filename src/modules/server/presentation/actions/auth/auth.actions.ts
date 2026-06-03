@@ -8,6 +8,7 @@ import {
   SignoutActionSchema,
   SignupActionSchema,
   VerifyTwoFactorOTPActionSchema,
+  VerifyTOTPActionSchema,
   SendMagicLinkActionSchema,
   SendResetPasswordActionSchema,
   ResetPasswordActionSchema,
@@ -26,6 +27,8 @@ import {
   TSendTwoFactorOTPControllerOutput,
   verifyTwoFactorOTPController,
   TVerifyTwoFactorOTPControllerOutput,
+  verifyTOTPController,
+  TVerifyTOTPControllerOutput,
   sendMagicLinkController,
   TSendMagicLinkControllerOutput,
   sendResetPasswordController,
@@ -34,6 +37,7 @@ import {
   TResetPasswordControllerOutput,
 } from "@/modules/server/core/auth/interface-adapters/controllers/auth";
 import { runWithTransport } from "@/modules/server/presentation/transport/runWithTransport";
+import { validateCaptcha } from "@/modules/server/shared/captcha/validateCaptcha";
 import {
   sendEmailVerificationController,
   TSendEmailVerificationControllerOutPut,
@@ -51,6 +55,7 @@ export const signupAction = createServerAction()
   .input(SignupActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TSignupControllerOutput>(async () => {
+      await validateCaptcha(input.captchaToken);
       const data = await signupController(input.payload);
 
       // Email verification takes priority over OAuth redirect when email is unverified.
@@ -77,6 +82,7 @@ export const signinAction = createServerAction()
   .input(SigninActionSchema, { skipInputParsing: true })
   .handler(async ({ input }) => {
     return await runWithTransport<TSigninControllerOutput>(async () => {
+      await validateCaptcha(input.captchaToken);
       const data = await signinController(input.payload);
 
       // Normal sign-in: "redirect" only exists on the non-2FA union member,
@@ -188,6 +194,23 @@ export const verifyTwoFactorOTPAction = createServerAction()
         };
       },
     );
+  });
+
+export const verifyTOTPAction = createServerAction()
+  .input(VerifyTOTPActionSchema, { skipInputParsing: true })
+  .handler(async ({ input }) => {
+    return await runWithTransport<TVerifyTOTPControllerOutput>(async () => {
+      const data = await verifyTOTPController(input.payload);
+
+      return {
+        result: data,
+        transport: {
+          ...input.transportOptions,
+          shouldRedirect: input.transportOptions?.shouldRedirect ?? true,
+          url: input.transportOptions?.url ?? "/",
+        },
+      };
+    });
   });
 
 export const sendMagicLinkAction = createServerAction()

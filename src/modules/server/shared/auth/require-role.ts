@@ -3,18 +3,18 @@ import { getServerSession } from "../../auth-provider/auth-server";
 import { getLocale } from "next-intl/server";
 
 export async function requireRole(roles: string[]) {
-  const session = await getServerSession();
-  const locale = await getLocale();
+  const [session, locale] = await Promise.all([getServerSession(), getLocale()]);
 
-  if (!session && !(session as any).user) {
+  if (!session?.user) {
     redirect({ href: "/auth/sign-in", locale });
+    return session; // unreachable — satisfies TS narrowing
   }
 
-  if (
-    !(session?.user as any).role ||
-    !roles.includes((session?.user as any).role)
-  ) {
+  const userRole = (session.user as { role?: string | null }).role;
+
+  if (!userRole || !roles.includes(userRole)) {
     redirect({ href: "/", locale });
+    return session; // unreachable — satisfies TS narrowing
   }
 
   return session;
