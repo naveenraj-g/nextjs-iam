@@ -11,10 +11,15 @@ let cache: OriginsCache | null = null;
 const TTL_MS = 60_000; // 60 seconds
 
 /**
- * Mutable array passed directly to oauthProvider({ validAudiences }).
- * Better Auth reads opts.validAudiences on every request, so mutating this
- * array in-place makes validAudiences effectively dynamic.
- * Initialized with BETTER_AUTH_URL as a safe baseline.
+ * Mutable array used as Better Auth's `validAudiences` for OAuth token validation.
+ * Better Auth reads `opts.validAudiences` on every token/authorize request,
+ * so mutating this array in-place makes validAudiences effectively dynamic.
+ * Initialized with `BETTER_AUTH_URL` as a safe baseline.
+ *
+ * **Usage in auth config:**
+ * ```ts
+ * oauthProvider({ validAudiences: validAudiencesRef })
+ * ```
  */
 export const validAudiencesRef: string[] = [
   process.env.BETTER_AUTH_URL!,

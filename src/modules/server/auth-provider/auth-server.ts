@@ -1,5 +1,16 @@
 "server-only"
 
+/**
+ * @module auth-provider/auth-server
+ * @description Server-side session utilities.
+ *              - `getServerSession()` calls `auth.api.getSession` with request headers,
+ *                returning the full session with all `customSession` extensions
+ *                (nav apps, permissions, organizations).
+ *              - `TServerSession` is the inferred full session type.
+ *              - `isEmailVerificationEnabled` reads the global toggle from auth config.
+ * @category Auth Provider
+ */
+
 import { headers } from "next/headers"
 import { auth } from "./auth"
 import { authConfig } from "./auth.config"

@@ -1,3 +1,12 @@
+/**
+ * @module admin/consents.service
+ * @description Manages OAuth consents — records of which users have authorized
+ *              which OAuth clients and with what scopes.
+ *              All operations use Better Auth's consent API.
+ * @category Infrastructure
+ * @layer Infrastructure
+ */
+
 import { randomUUID } from "crypto";
 import { auth } from "@/modules/server/auth-provider/auth";
 import { headers } from "next/headers";
@@ -15,6 +24,7 @@ import {
 } from "@/modules/entities/schemas/admin/consents/consents.schema";
 
 export class ConsentsService implements IConsentsService {
+  /** List all OAuth consents across all users and clients. */
   async listConsents(): Promise<TListConsentsResponseSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -30,6 +40,7 @@ export class ConsentsService implements IConsentsService {
     }
   }
 
+  /** Get a single consent by ID. Uses GET with `query` param. */
   async getConsent(payload: TGetConsentValidationSchema): Promise<TConsentSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -62,6 +73,7 @@ export class ConsentsService implements IConsentsService {
     }
   }
 
+  /** Update the scopes on an existing consent record. */
   async updateConsentScopes(
     payload: TUpdateConsentScopesValidationSchema,
   ): Promise<TConsentSchema> {
@@ -96,6 +108,7 @@ export class ConsentsService implements IConsentsService {
     }
   }
 
+  /** Delete a consent record — revokes the user's authorization for that client. */
   async deleteConsent(
     payload: TDeleteConsentValidationSchema,
   ): Promise<{ success: boolean }> {

@@ -1,3 +1,14 @@
+/**
+ * @module admin/users/createUser.controller
+ * @description Controller for creating a new user. Validates incoming input
+ *              with Zod's `safeParseAsync` — throws `InputParseError` on failure.
+ *              The presenter simply passes through the created user.
+ *
+ * **Pattern:** validate → delegate to use case → present.
+ * @category Controller
+ * @layer Interface Adapters
+ */
+
 import {
   CreateUserValidationSchema,
   TUserSchema,

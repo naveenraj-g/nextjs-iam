@@ -1,3 +1,12 @@
+/**
+ * @module settings/userPreference.service
+ * @description Manages per-user locale/format preferences (date format, time format,
+ *              currency, number format, week start). Uses Prisma upsert for
+ *              create-on-first-access pattern. Returns null when no preference exists.
+ * @category Infrastructure
+ * @layer Infrastructure
+ */
+
 import { randomUUID } from "crypto";
 import { prisma } from "../../../../../../../prisma/db";
 import { IUserPreferenceService } from "../../domain/interfaces/userPreference.service.interface";

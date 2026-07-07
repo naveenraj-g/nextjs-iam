@@ -1,3 +1,28 @@
+/**
+ * @module shared/table/data-table
+ * @description Reusable TanStack+shadcn data table used by every admin page.
+ *              Features: server-side search, column sorting, pagination,
+ *              multi-select filtering, loading/error states, and optional
+ *              card+table view toggle.
+ *
+ * **Props:**
+ * - `columns` — TanStack column definitions (from `*TableColumn.tsx`)
+ * - `data` — flat array of row objects
+ * - `label` / `dataSize` — displayed in the toolbar header
+ * - `searchField` — the column accessorKey to search against
+ * - `filterField` / `filterValues` — dropdown filter column + values
+ * - `openModal` — called when the "Add" button is clicked
+ * - `isLoading` / `error` — displayed in toolbar alongside the label
+ * - `cardRender` — optional card view renderer for mobile/tablet layouts
+ *
+ * **States handled:**
+ * - Data present → full table with pagination
+ * - Empty data → fallback message with triangle icon
+ * - Not mounted → `null` (hydration guard)
+ *
+ * @category Shared Component
+ */
+
 "use client";
 
 import React, { useEffect, useState } from "react";

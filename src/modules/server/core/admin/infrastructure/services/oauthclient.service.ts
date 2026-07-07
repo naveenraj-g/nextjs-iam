@@ -1,3 +1,20 @@
+/**
+ * @module admin/oauthclient.service
+ * @description Infrastructure service for OAuth client management operations.
+ *              Each method calls Better Auth's OAuth provider API and validates
+ *              responses with Zod. All sensitive fields (client_secret) are
+ *              stripped from log output.
+ * @category Infrastructure
+ * @layer Infrastructure
+ *
+ * **Better Auth return type gotchas:**
+ * - `adminCreateOAuthClient` returns the client **directly** (no wrapper)
+ * - `adminUpdateOAuthClient` returns client directly
+ * - `deleteOAuthClient` returns `void` — we build `{ success: true }` manually
+ * - `getOAuthClient` is a GET request — use `query:` not `body:`
+ * - `rotateClientSecret` returns the full client with the new secret
+ */
+
 import { randomUUID } from "crypto";
 import { IOAuthClientService } from "@/modules/server/core/admin/domain/interfaces/oauthclient.service.interface";
 import { TCreateOAuthClientPayload } from "@/modules/entities/types/admin/oauthclient.type";
@@ -20,6 +37,14 @@ import { logOperation } from "@/modules/server/config/logger/log-operation";
 import { mapBetterAuthError } from "@/modules/server/shared/errors/mappers/mapBetterAuthError";
 
 export class OAuthClientService implements IOAuthClientService {
+  /**
+   * Create a new OAuth 2.1 client.
+   * Returns the full client object **including** `client_secret` —
+   * this is the only time the secret is available in plaintext.
+   * The UI must show it once (two-phase modal pattern).
+   *
+   * @returns The created client with its one-time `client_secret`.
+   */
   async createOAuthClient(
     payload: TCreateOAuthClientPayload,
   ): Promise<TCreateOAuthClientResponseDtoSchema> {
@@ -58,6 +83,13 @@ export class OAuthClientService implements IOAuthClientService {
     }
   }
 
+  /**
+   * Update an existing OAuth client's metadata (name, redirect URIs, etc.).
+   * Does NOT return the client secret — only public fields.
+   *
+   * @param payload - Client ID plus `update` object with changed fields.
+   * @returns The updated client (without secret).
+   */
   async updateOAuthClient(
     payload: TUpdateOAuthClientValidationSchema,
   ): Promise<TGetOAuthClientResponseDtoSchema> {
@@ -103,6 +135,12 @@ export class OAuthClientService implements IOAuthClientService {
     }
   }
 
+  /**
+   * Delete an OAuth client permanently.
+   * ⚠️ **Gotcha:** `deleteOAuthClient` returns `void` — we build `{ success: true }`.
+   *
+   * @returns `{ success: true }` on success.
+   */
   async deleteOAuthClient(
     payload: TDeleteOAuthClientValidationSchema,
   ): Promise<TDeleteOAuthClientResponseDtoSchema> {
@@ -137,6 +175,12 @@ export class OAuthClientService implements IOAuthClientService {
     }
   }
 
+  /**
+   * Get a single OAuth client by ID.
+   * ⚠️ **Gotcha:** This is a GET request — uses `query:` not `body:`.
+   *
+   * @returns The full client object (without secret).
+   */
   async getOAuthClient(
     payload: TGetOAuthClientValidationSchema,
   ): Promise<TGetOAuthClientResponseDtoSchema> {
@@ -171,6 +215,13 @@ export class OAuthClientService implements IOAuthClientService {
     }
   }
 
+  /**
+   * Rotate (regenerate) an OAuth client's secret.
+   * Old secret is immediately invalidated. The new secret is returned once —
+   * the UI must show it in a two-phase modal and never display it again.
+   *
+   * @returns The client with the **new** `client_secret` (one-time display).
+   */
   async rotateClientSecret(
     payload: TRotateClientSecretValidationSchema,
   ): Promise<TGetOAuthClientResponseDtoSchema> {
@@ -207,6 +258,12 @@ export class OAuthClientService implements IOAuthClientService {
     }
   }
 
+  /**
+   * List all OAuth clients in the system.
+   * No pagination — returns all clients at once.
+   *
+   * @returns Array of client objects (without secrets).
+   */
   async getOAuthClients(): Promise<TGetOAuthClientsResponseDtoSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();

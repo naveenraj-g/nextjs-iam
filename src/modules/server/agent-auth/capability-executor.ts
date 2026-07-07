@@ -1,3 +1,28 @@
+/**
+ * @module agent-auth/capability-executor
+ * @description Capability execution handler for the `agentAuth` plugin's
+ *              `onExecute` callback. Routes named capabilities to their
+ *              server-side implementations.
+ *
+ * **Capabilities implemented:**
+ * - `profile:read` — returns user profile (delegated only)
+ * - `profile:write` — updates user name/image (delegated only)
+ * - `organizations:read` — lists user's org memberships (delegated only)
+ * - `api_keys:read` — lists user's non-expired API keys
+ * - `api_keys:create` / `api_keys:revoke` — deferred to dedicated endpoints
+ *
+ * **Mode requirements:**
+ * - Most capabilities require `delegated` mode (linked to a real user).
+ *   `autonomous` agents cannot access user-specific data.
+ *
+ * @param capability - Named capability string (e.g. `"profile:read"`).
+ * @param args - Capability arguments from the agent request body.
+ * @param agentSession - Verified agent session from `verifyAgentRequest`.
+ * @returns The capability execution result (arbitrary shape).
+ * @throws {Error} If the capability is not recognized or mode requirements not met.
+ * @category Agent Auth
+ */
+
 "server-only";
 
 import type { AgentSession } from "@better-auth/agent-auth";

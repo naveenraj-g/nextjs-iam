@@ -1,3 +1,14 @@
+/**
+ * @module shared/errors/schemaParseError
+ * @description Zod validation error wrappers used at architectural boundaries.
+ *              These errors carry the flattened Zod issues so the ZSA error
+ *              mapper can extract field-level validation messages for forms.
+ *
+ * - `InputParseError` — thrown by controllers when incoming data fails validation.
+ * - `OutputParseError` — thrown by services when Better Auth response fails validation.
+ * @category Error Handling
+ */
+
 import { ZodError } from "zod";
 
 export abstract class BaseParseError extends Error {

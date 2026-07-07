@@ -1,3 +1,14 @@
+/**
+ * @module api/internal/cors-origins
+ * @description Internal API endpoint that returns all OAuth client redirect URI
+ *              origins for middleware's dynamic CORS logic.
+ *              Protected by `x-internal-secret` header — only callable
+ *              by the middleware (same Next.js instance).
+ *
+ * **Called by:** `proxy.ts` middleware — cached for 60 seconds.
+ * @category Internal API
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import { getOAuthClientOrigins } from "@/modules/server/auth-provider/oauth-client-origins";
 

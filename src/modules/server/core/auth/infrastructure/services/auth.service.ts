@@ -1,3 +1,20 @@
+/**
+ * @module auth/auth.service
+ * @description Core authentication service — signup, signin (email + social),
+ *              signout, email verification, 2FA (OTP + TOTP), magic link,
+ *              password reset. Every method calls Better Auth's API and
+ *              validates responses with Zod DTO schemas.
+ *
+ * **Security:** OAuth callback URLs are validated against a whitelist
+ * (`"/"` or `/api/auth/oauth2/authorize?*`) to prevent open redirect attacks.
+ *
+ * **Magic link OAuth workaround:** Because Better Auth's origin check
+ * double-decodes OAuth authorize paths (failing on `:`), magic links route
+ * through a relay page that base64url-decodes and redirects server-side.
+ * @category Infrastructure
+ * @layer Infrastructure
+ */
+
 import { randomUUID } from "crypto";
 import {
   SignupResponseDtoSchema,

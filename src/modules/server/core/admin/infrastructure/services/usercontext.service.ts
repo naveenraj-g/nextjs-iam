@@ -1,3 +1,13 @@
+/**
+ * @module admin/usercontext.service
+ * @description Manages per-user context: which org and which role a user
+ *              currently has active. This determines what navigation menus
+ *              they see, what permissions they have, and which org's data
+ *              they are operating within. All operations use Prisma directly.
+ * @category Infrastructure
+ * @layer Infrastructure
+ */
+
 import { randomUUID } from "crypto";
 import { prisma } from "../../../../../../../prisma/db";
 import { IUserContextService } from "../../domain/interfaces/usercontext.service.interface";

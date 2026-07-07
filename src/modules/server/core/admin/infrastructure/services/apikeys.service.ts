@@ -1,3 +1,14 @@
+/**
+ * @module admin/apikeys.service
+ * @description Manages API keys (prefix: `drgodly_`).
+ *              - List/create: uses Better Auth's `auth.api` for proper key generation/hashing.
+ *              - Delete/deleteExpired: uses Prisma for direct DB operations.
+ *              - Update: uses Better Auth API for permission/metadata changes.
+ *              Admin calls omit session headers — they are trusted server operations.
+ * @category Infrastructure
+ * @layer Infrastructure
+ */
+
 import { randomUUID } from "crypto";
 import { auth } from "@/modules/server/auth-provider/auth";
 import { prisma } from "../../../../../../../prisma/db";

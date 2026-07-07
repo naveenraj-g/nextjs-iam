@@ -1,3 +1,14 @@
+/**
+ * @module admin/resources.service
+ * @description Manages RBAC resources (like "patient", "appointment") and
+ *              resource actions (like "patient:read", "appointment:create").
+ *              These form the permission system that feeds the nav menu
+ *              permission gates, org role permissions, and resource action lists.
+ *              All operations use Prisma directly.
+ * @category Infrastructure
+ * @layer Infrastructure
+ */
+
 import { randomUUID } from "crypto";
 import { prisma } from "../../../../../../../prisma/db";
 import { IResourcesService } from "../../domain/interfaces/resources.service.interface";
@@ -25,6 +36,7 @@ export class ResourcesService implements IResourcesService {
   // Resource operations
   // ------------------------------------------------------------------ //
 
+  /** List all resources alphabetically with their action counts. */
   async listResources(): Promise<TListResourcesResponseSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -74,6 +86,7 @@ export class ResourcesService implements IResourcesService {
     }
   }
 
+  /** Create a resource (e.g. "patient", "observation"). */
   async createResource(
     payload: TCreateResourceValidationSchema,
   ): Promise<TResourceSchema> {
@@ -172,6 +185,7 @@ export class ResourcesService implements IResourcesService {
     }
   }
 
+  /** Delete a resource and cascade-delete all its actions. */
   async deleteResource(
     payload: TDeleteResourceValidationSchema,
   ): Promise<{ success: boolean }> {
@@ -212,6 +226,7 @@ export class ResourcesService implements IResourcesService {
   // ResourceAction operations
   // ------------------------------------------------------------------ //
 
+  /** List all resource actions, optionally filtered by resource. */
   async listResourceActions(
     resourceId?: string,
   ): Promise<TListResourceActionsResponseSchema> {

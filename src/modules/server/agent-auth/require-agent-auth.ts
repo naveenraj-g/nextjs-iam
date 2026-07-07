@@ -1,3 +1,26 @@
+/**
+ * @module agent-auth/require-agent-auth
+ * @description Agent authentication guards for API routes.
+ *              Use these in any route handler that accepts agent requests.
+ *
+ * **Functions:**
+ * - `getAgentSession(request)` — verifies the `AgentAuth <jwt>` header
+ *   and returns the agent session. Returns `null` for invalid/missing JWTs.
+ * - `requireAgentCapability(session, capability)` — asserts the agent has
+ *   an active grant for the named capability. Throws if not.
+ * - `requireDelegatedAgent(session)` — asserts the session is delegated
+ *   (linked to a real user). Throws for autonomous agents.
+ *
+ * **Usage in API routes:**
+ * ```ts
+ * const session = await getAgentSession(request);
+ * if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+ * requireAgentCapability(session, "profile:read");
+ * // ... handler logic
+ * ```
+ * @category Agent Auth
+ */
+
 "server-only";
 
 import type { AgentSession } from "@better-auth/agent-auth";
@@ -5,22 +28,12 @@ import { verifyAgentRequest } from "@better-auth/agent-auth";
 import type { Auth } from "better-auth";
 import { auth } from "../auth-provider/auth";
 
-/**
- * Resolve the agent session from an incoming Request.
- * Returns `null` when the request carries no valid agent JWT.
- * Use this in Next.js API route handlers.
- */
 export async function getAgentSession(
   request: Request,
 ): Promise<AgentSession | null> {
   return verifyAgentRequest(request, auth as unknown as Auth) as Promise<AgentSession | null>;
 }
 
-/**
- * Assert that `agentSession` holds an active grant for `capability`.
- * Throws an `Error` when the grant is absent or not active — callers should
- * map this to a 403 response.
- */
 export function requireAgentCapability(
   agentSession: AgentSession,
   capability: string,
@@ -35,10 +48,6 @@ export function requireAgentCapability(
   }
 }
 
-/**
- * Assert that `agentSession` is a delegated session (linked to a real user).
- * Throws when the session is autonomous and no userId is available.
- */
 export function requireDelegatedAgent(agentSession: AgentSession): void {
   if (agentSession.type !== "delegated" || !agentSession.user?.id) {
     throw new Error(

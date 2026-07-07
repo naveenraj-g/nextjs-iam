@@ -1,3 +1,43 @@
+/**
+ * @module auth-provider/auth.config
+ * @description Central Better Auth configuration for the IAM server.
+ *              Defines every plugin, database adapter, rate limit rule,
+ *              session policy, email handler, social provider, OAuth provider setting,
+ *              database hook, and auth middleware.
+ * @category Configuration
+ * @layer Auth Provider (Cross-cutting)
+ *
+ * ## Active Plugins (in order)
+ *
+ * | Plugin | Package | Purpose |
+ * |--------|---------|---------|
+ * | `openAPI` | `better-auth/plugins` | Auto-generated API reference at `/api/auth/reference` |
+ * | `username` | `better-auth/plugins` | Username support with blocklist (admin, superadmin) |
+ * | `twoFactor` | `better-auth/plugins` | Email OTP 2FA with `skipVerificationOnEnable` |
+ * | `jwt` | `better-auth/plugins` | JWT token generation with custom payload (org context) |
+ * | `organization` | `better-auth/plugins` | Multi-tenant orgs, teams, RBAC, dynamic access control |
+ * | `admin` | `better-auth/plugins` | Role-based admin with `superadmin` + `guest` roles |
+ * | `oauthProvider` | `@better-auth/oauth-provider` | Acts as OAuth 2.1 / OIDC authorization server |
+ * | `lastLoginMethod` | `better-auth/plugins` | Tracks last used sign-in method per user |
+ * | `magicLink` | `better-auth/plugins` | Passwordless sign-in via email link |
+ * | `apiKey` | `@better-auth/api-key` | API key management (prefix: `drgodly_`) |
+ * | `agentAuth` | `@better-auth/agent-auth` | AI agent identity, registration, capability execution |
+ * | `customSession` | `better-auth/plugins` | Attaches nav apps, permissions, and org list to every session |
+ * | `multiSession` | `better-auth/plugins` | Multiple simultaneous login sessions per user |
+ * | `bearer` | `better-auth/plugins` | Accept `Authorization: Bearer <token>` for non-browser clients |
+ * | `nextCookies` | `better-auth/next-js` | Cookie handling for Next.js server-side operations |
+ *
+ * ## Key Design Decisions
+ * - `buildUserContext()` — shared function that builds nav apps, permissions,
+ *   org memberships, and active role for both `customSession` and JWT payload.
+ * - Session cookie cache: 60s TTL. Custom fields (apps, permissions, orgs)
+ *   are NOT cached — always fetched fresh on cache miss.
+ * - `requireEmailVerification: false` — toggle via `REQUIRE_EMAIL_VERIFICATION` constant.
+ * - Dynamic trusted origins: fetched from registered OAuth client redirect URIs.
+ * - `allowDynamicClientRegistration: false` — OAuth clients created by superadmin only.
+ * - New users auto-join "drgodly" org with "patient" role on first session.
+ */
+
 "server-only";
 
 import { randomUUID } from "crypto";
@@ -762,7 +802,7 @@ export const authConfig = {
 
     bearer(),
 
-    haveIBeenPwned(),
+    // haveIBeenPwned(),
 
     // NOTE: This plugin make sure the application knows how to set cookies in next.js, it is required for server side operations with better-auth
     nextCookies(),

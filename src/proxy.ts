@@ -1,3 +1,25 @@
+/**
+ * @module middleware/proxy
+ * @description Next.js middleware — the request pipeline entry point.
+ *              Runs on every matched request before route handlers.
+ *
+ * **Pipeline (in order):**
+ * 1. **CORS** — reads dynamic allowed origins from registered OAuth clients
+ *    (cached for 60s). Adds CORS headers for cross-origin API requests.
+ *    Preflight `OPTIONS` requests return 200 immediately.
+ * 2. **Admin auth guard** — (currently commented out) would redirect
+ *    unauthenticated or non-superadmin users from `/admin/*` routes.
+ * 3. **next-intl** — locale-based routing via `next-intl/middleware`.
+ *    Extracts locale from URL and sets `x-next-intl-locale` header.
+ * 4. **Pathname header** — exposes `x-pathname` for downstream use.
+ *
+ * **Matcher:** applies to `/api/*` and all non-static, non-internal paths.
+ *
+ * **Dynamic CORS:** The middleware fetches from `/api/internal/cors-origins`
+ * (protected by `x-internal-secret`) with a 60-second in-memory cache.
+ * Falls back to cached origins if the fetch fails.
+ */
+
 import { NextRequest, NextResponse } from "next/server";
 import createMiddleware from "next-intl/middleware";
 import { routing } from "./i18n/routing";

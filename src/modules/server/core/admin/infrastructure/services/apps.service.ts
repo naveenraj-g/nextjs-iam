@@ -1,3 +1,14 @@
+/**
+ * @module admin/apps.service
+ * @description Manages navigation apps and hierarchical menu nodes.
+ *              Apps represent top-level application shells in the sidebar.
+ *              Menu nodes are the actual navigation items organized in
+ *              parent-child trees, each gated by permission keys.
+ *              All operations use Prisma directly.
+ * @category Infrastructure
+ * @layer Infrastructure
+ */
+
 import { randomUUID } from "crypto";
 import { prisma } from "../../../../../../../prisma/db";
 import { IAppsService } from "../../domain/interfaces/apps.service.interface";

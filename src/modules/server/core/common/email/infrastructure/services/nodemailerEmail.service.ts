@@ -1,3 +1,12 @@
+/**
+ * @module common/email/nodemailerEmail
+ * @description Nodemailer-based email service using Gmail SMTP with app password.
+ *              Used by `sendAuthEmail` utility and all auth notification flows
+ *              (verification, password reset, 2FA OTP, magic link, etc.).
+ * @category Infrastructure
+ * @layer Infrastructure
+ */
+
 import nodemailer from "nodemailer"
 import { IEmailService } from "../../domain/interfaces/email.service.interface"
 import { TSendEmailPayload } from "@/modules/entities/types/email"

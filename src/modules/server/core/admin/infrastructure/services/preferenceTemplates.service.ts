@@ -1,3 +1,13 @@
+/**
+ * @module admin/preferenceTemplates.service
+ * @description Manages locale/format preference templates used to set default
+ *              date, time, currency, and number formats for users.
+ *              Enforces the "only one GLOBAL template" business rule.
+ *              All operations use Prisma directly.
+ * @category Infrastructure
+ * @layer Infrastructure
+ */
+
 import { randomUUID } from "crypto";
 import { prisma } from "../../../../../../../prisma/db";
 import { IPreferenceTemplatesService } from "../../domain/interfaces/preferenceTemplates.service.interface";

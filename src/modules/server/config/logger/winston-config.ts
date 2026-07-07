@@ -1,4 +1,21 @@
-// lib/server-logger/winston-config.ts
+/**
+ * @module config/logger/winston-config
+ * @description Winston logger with daily-rotate-file transports.
+ *              Creates separate log files for each level (info, error, warn, debug)
+ *              that rotate daily with 2-day retention and gzip compression.
+ *
+ * **Transports:**
+ * - Console — colorized output for dev environment
+ * - Daily rotate files — JSON-formatted, one file per level per day
+ *
+ * **Log directory:** `LOG_DIR` env var (default: `../logs/iam`)
+ * **Log level:** `debug` in development, `info` in production.
+ *
+ * **Usage:** This is a singleton — call `getWinstonLogger()` anywhere.
+ * The `logOperation` utility wraps this for structured start/success/error logging.
+ * @category Infrastructure
+ */
+
 import fs from "fs";
 import winston from "winston";
 import "winston-daily-rotate-file";
@@ -6,18 +23,15 @@ import moment from "moment-timezone";
 
 const LOG_DIR = process.env.LOG_DIR || "../logs/iam";
 
-// Ensure external log directory exists
 if (!fs.existsSync(LOG_DIR)) {
   fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
-// Format timestamp using Moment.js
 const momentTimestamp = winston.format((info) => {
   info.timestamp = moment().format("DD-MM-YYYY HH:mm:ss.SSS");
   return info;
 });
 
-// Common log format (JSON for structure)
 const jsonFormat = winston.format.printf(
   ({ level, message, timestamp, ...meta }) => {
     return JSON.stringify({
@@ -33,13 +47,11 @@ const jsonFormat = winston.format.printf(
 const exactLevel = (level: string) =>
   winston.format((info) => (info.level === level ? info : false))();
 
-// Create a daily rotation transport for a specific log level
 const createDailyRotateTransport = (level: string) =>
   new winston.transports.DailyRotateFile({
     dirname: LOG_DIR,
     filename: `${level}-%DATE%.log`,
     datePattern: "DD-MM-YYYY",
-    // maxSize: "20m",
     maxFiles: "2d",
     level,
     zippedArchive: true,
@@ -51,7 +63,6 @@ const createDailyRotateTransport = (level: string) =>
     ),
   });
 
-// Base console transport (for dev environment)
 const consoleTransport = new winston.transports.Console({
   format: winston.format.combine(
     winston.format.colorize(),
@@ -67,7 +78,6 @@ const consoleTransport = new winston.transports.Console({
   ),
 });
 
-// Singleton-safe logger creation
 let loggerInstance: winston.Logger | null = null;
 
 export function getWinstonLogger(): winston.Logger {

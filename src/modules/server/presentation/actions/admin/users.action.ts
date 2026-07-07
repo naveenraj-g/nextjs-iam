@@ -1,38 +1,49 @@
+/**
+ * @module presentation/admin/users.action
+ * @description ZSA server actions for user management — the bridge between
+ *              the Next.js server and the Clean Architecture layers.
+ *
+ * **All mutation actions:**
+ * - Use `superadminProcedure` for RBAC enforcement
+ * - Set `skipInputParsing: true` — the controller does the actual Zod validation
+ * - Wrap execution in `runWithTransport` for revalidation/redirect + error mapping
+ *
+ * **Actions exported:**
+ * - `getUsersAction` — read-only, no input schema needed
+ * - `createUserAction`
+ * - `updateUserAction`
+ * - `setUserRoleAction`
+ * - `banUserAction`
+ * - `unbanUserAction`
+ * - `removeUserAction`
+ * - `setUserPasswordAction`
+ * - `revokeUserSessionsAction`
+ * - `impersonateUserAction` — uses `shouldRedirect: true` to propagate new session cookie
+ *
+ * @category Presentation
+ * @layer Presentation
+ */
+
 "use server";
 
 import { superadminProcedure } from "../procedures";
 import { runWithTransport } from "../../transport/runWithTransport";
 import {
-  getUsersController,
-  TGetUsersControllerOutput,
-  createUserController,
-  TCreateUserControllerOutput,
-  updateUserController,
-  TUpdateUserControllerOutput,
-  setUserRoleController,
-  TSetUserRoleControllerOutput,
-  banUserController,
-  TBanUserControllerOutput,
-  unbanUserController,
-  TUnbanUserControllerOutput,
-  removeUserController,
-  TRemoveUserControllerOutput,
-  setUserPasswordController,
-  TSetUserPasswordControllerOutput,
-  revokeUserSessionsController,
-  TRevokeUserSessionsControllerOutput,
-  impersonateUserController,
-  TImpersonateUserControllerOutput,
+  getUsersController, TGetUsersControllerOutput,
+  createUserController, TCreateUserControllerOutput,
+  updateUserController, TUpdateUserControllerOutput,
+  setUserRoleController, TSetUserRoleControllerOutput,
+  banUserController, TBanUserControllerOutput,
+  unbanUserController, TUnbanUserControllerOutput,
+  removeUserController, TRemoveUserControllerOutput,
+  setUserPasswordController, TSetUserPasswordControllerOutput,
+  revokeUserSessionsController, TRevokeUserSessionsControllerOutput,
+  impersonateUserController, TImpersonateUserControllerOutput,
 } from "@/modules/server/core/admin/interface-adapters/controllers/users";
 import {
-  CreateUserActionSchema,
-  UpdateUserActionSchema,
-  SetUserRoleActionSchema,
-  BanUserActionSchema,
-  UnbanUserActionSchema,
-  RemoveUserActionSchema,
-  SetUserPasswordActionSchema,
-  RevokeUserSessionsActionSchema,
+  CreateUserActionSchema, UpdateUserActionSchema, SetUserRoleActionSchema,
+  BanUserActionSchema, UnbanUserActionSchema, RemoveUserActionSchema,
+  SetUserPasswordActionSchema, RevokeUserSessionsActionSchema,
   ImpersonateUserActionSchema,
 } from "@/modules/entities/schemas/admin/users/users.schema";
 

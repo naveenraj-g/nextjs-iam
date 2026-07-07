@@ -1,3 +1,19 @@
+/**
+ * @module admin/users.service
+ * @description Infrastructure service for admin user management operations.
+ *              Every method calls Better Auth's admin API, validates the
+ *              response with Zod, and logs start/success/error via Winston.
+ * @category Infrastructure
+ * @layer Infrastructure
+ *
+ * **Better Auth return type gotchas (critical):**
+ * - `adminUpdateUser` returns the user **directly** (no `.user` wrapper)
+ * - `createUser`, `setRole`, `banUser`, `unbanUser` return `{ user }` — use `.user`
+ * - `removeUser` returns `void` — we build `{ success: true }` manually
+ * - `setUserPassword` returns `{ status: boolean }` — NOT `{ success }`
+ * - `impersonateUser` returns `{ session, user }` — both needed
+ */
+
 import { randomUUID } from "crypto";
 import { headers } from "next/headers";
 import { auth } from "@/modules/server/auth-provider/auth";
@@ -17,6 +33,13 @@ import {
 } from "@/modules/entities/schemas/admin/users/users.schema";
 
 export class UsersService implements IUsersService {
+  /**
+   * List all users in the system.
+   * Calls `auth.api.listUsers({ query: {} })` — no pagination params,
+   * returns everything at once.
+   *
+   * @returns A flat array of user objects (not paginated — we strip the wrapper in the controller).
+   */
   async getUsers(): Promise<TGetUsersResponseDtoSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -49,6 +72,15 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Find a user by email address.
+   * Uses `listUsers` with `searchValue` + `searchField: "email"` + `limit: 1`.
+   * Throws if no user matches the email.
+   *
+   * @param email - The email to search for (exact match).
+   * @returns The user object.
+   * @throws {Error} If no user is found with that email.
+   */
   async getUserByEmail(email: string): Promise<TUserSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -91,6 +123,10 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Create a new user via Better Auth.
+   * @returns The created user — unwrapped from `res.user`.
+   */
   async createUser(payload: TCreateUserValidationSchema): Promise<TUserSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -129,6 +165,13 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Update a user's name, email, or image.
+   * ⚠️ **Gotcha:** `adminUpdateUser` returns the user **directly** —
+   *     no `.user` wrapper. Do NOT try `res.user`.
+   *
+   * @returns The updated user object (direct return, not wrapped).
+   */
   async updateUser(payload: TUpdateUserValidationSchema): Promise<TUserSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -164,6 +207,13 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Set a user's RBAC role (superadmin, admin, or guest).
+   * Calls `auth.api.setRole` — returns `{ user }` wrapper.
+   *
+   * @param payload - `{ userId, role }` where `role` is one of the configured admin roles.
+   * @returns The user object with updated role, unwrapped from `res.user`.
+   */
   async setUserRole(
     payload: TSetUserRoleValidationSchema,
   ): Promise<TUserSchema> {
@@ -201,6 +251,13 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Ban a user — blocks their sign-in until unbanned or ban expires.
+   * Supports optional `banReason` and `banExpiresIn` (seconds).
+   *
+   * @param payload - `{ userId, banReason?, banExpiresIn? }`
+   * @returns The banned user object, unwrapped from `res.user`.
+   */
   async banUser(payload: TBanUserValidationSchema): Promise<TUserSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -240,6 +297,12 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Unban a previously banned user — restores their ability to sign in.
+   * Calls `auth.api.unbanUser` — returns `{ user }` wrapper.
+   *
+   * @returns The unbanned user object, unwrapped from `res.user`.
+   */
   async unbanUser(payload: { userId: string }): Promise<TUserSchema> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -275,6 +338,12 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Permanently delete a user.
+   * ⚠️ **Gotcha:** `removeUser` returns `void` — we construct `{ success: true }` manually.
+   *
+   * @returns `{ success: true }` — built from `res.success`.
+   */
   async removeUser(payload: { userId: string }): Promise<{ success: boolean }> {
     const startTimeMs = Date.now();
     const operationId = randomUUID();
@@ -310,6 +379,12 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Set a user's password (admin override — no old password required).
+   * ⚠️ **Gotcha:** Returns `{ status: boolean }`, NOT `{ success: boolean }`.
+   *
+   * @returns `{ status: true }` on success.
+   */
   async setUserPassword(
     payload: TSetUserPasswordValidationSchema,
   ): Promise<{ status: boolean }> {
@@ -347,6 +422,10 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Revoke all active sessions for a user — forces sign-out on all devices.
+   * @returns `{ success: true }`.
+   */
   async revokeUserSessions(payload: {
     userId: string;
   }): Promise<{ success: boolean }> {
@@ -384,6 +463,15 @@ export class UsersService implements IUsersService {
     }
   }
 
+  /**
+   * Impersonate a user — creates a new session for the admin as the target user.
+   * Returns both the new `session` and `user` objects so the controller can
+   * propagate the session cookie and trigger a redirect.
+   *
+   * ⚠️ **WARNING:** This is a powerful operation. Only superadmins should have access.
+   *
+   * @returns `{ session: unknown, user: TUserSchema }` — session must be passed to the client.
+   */
   async impersonateUser(payload: {
     userId: string;
   }): Promise<{ session: unknown; user: TUserSchema }> {

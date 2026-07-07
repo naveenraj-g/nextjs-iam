@@ -1,3 +1,19 @@
+/**
+ * @module shared/errors/applicationError
+ * @description The root error base for all controlled failures in the application.
+ *              Every error crossing an architectural boundary uses this or a subclass.
+ *
+ * **Properties:**
+ * - `message` — user-safe description (shown in UI for auth errors)
+ * - `code` — internal classification string for programmatic handling
+ * - `statusCode` — HTTP semantic intent (mapped to user-visible feedback)
+ * - `isOperational` — whether this is expected (true) vs. a programming bug (false)
+ * - `cause` — original error, if wrapping another error (never exposed to client)
+ *
+ * **Subclasses:** See `AuthError`, `InfrastructureError` for domain-specific errors.
+ * @category Error Handling
+ */
+
 export type ErrorMetadata = Record<string, unknown>;
 
 export class ApplicationError extends Error {
@@ -28,10 +44,7 @@ export class ApplicationError extends Error {
       (this as any).cause = options.cause;
     }
 
-    // Capture a clean stack trace starting from the call site where this error
-    // was created, not from inside the error class constructor itself.
-    // This makes logs show where the error actually originated and how it
-    // propagated through the application layers.
+    // Capture a clean stack trace from the throw site, not the constructor.
     Error.captureStackTrace(this, this.constructor);
   }
 }
