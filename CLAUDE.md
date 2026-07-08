@@ -280,6 +280,24 @@ Default role on sign-up: `guest`. Every admin page calls `requireRole(["superadm
 
 ## Implemented Admin Features
 
+All 11 features below are fully wired end-to-end (domain → service → DI module → usecases → controller → server action → client types/components/forms/modals/provider → page), following the layering documented above.
+
+| Feature | Route | Backend folder |
+|---|---|---|
+| Users | `/admin/users` | `users` |
+| OAuth Clients | `/admin/oauth-clients` | `oauthclient` |
+| Sessions | `/admin/sessions` | `sessions` |
+| Organizations | `/admin/organizations` | `organizations` |
+| Consents | `/admin/consents` | `consents` |
+| Agent Auth | `/admin/agent-auth` | `agent-auth` |
+| Apps | `/admin/apps` | `apps` |
+| Resources | `/admin/resources` | `resources` |
+| API Keys | `/admin/api-keys` | `apikeys` |
+| Preference Templates | `/admin/preference-templates` | `preference-templates` |
+| User Context | `/admin/user-context` | `usercontext` |
+
+Users and OAuth Clients are the two most-referenced examples throughout this doc:
+
 ### Users (`/admin/users`)
 | Operation | Better Auth Method |
 |---|---|
@@ -303,6 +321,8 @@ Default role on sign-up: `guest`. Every admin page calls `requireRole(["superadm
 | Delete client | `auth.api.deleteOAuthClient` |
 | Get single client | `auth.api.getOAuthClient` (GET, uses `query` not `body`) |
 | Rotate secret | `auth.api.rotateClientSecret` |
+
+> Note: backend folder names are inconsistent for 4 features (`agent-auth` vs `agentauth` in some usecase/DI symbols, `apikeys` vs `api-keys`, `oauthclient` vs `oauth-clients`, `usercontext` vs `user-context`) — a kebab-case normalization pass is tracked as a follow-up. New features should use kebab-case consistently across every layer.
 
 ---
 

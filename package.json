@@ -1,6 +1,13 @@
 {
-  "name": "better-auth",
+  "name": "nextjs-iam",
   "version": "0.1.0",
+  "description": "A Next.js IAM server built on Better Auth, exposing OAuth 2.1 / OIDC, API keys, and AI agent auth behind an admin dashboard.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/naveenraj-g/nextjs-iam.git"
+  },
+  "author": "Naveen Raj",
   "private": true,
   "scripts": {
     "dev": "next dev -p 5001",
